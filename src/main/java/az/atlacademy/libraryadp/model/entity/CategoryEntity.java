@@ -1,4 +1,4 @@
-package az.atlacademy.library_management.model.entity;
+package az.atlacademy.libraryadp.model.entity;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,20 +20,17 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "authors")
-public class AuthorEntity 
+@Table(name = "categories")
+public class CategoryEntity 
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; 
 
     @Column(nullable = false)
-    private String firstName;
-
-    @Column(nullable = false)
-    private String lastName;
+    private String name;
 
     @ToString.Exclude
-    @ManyToMany(mappedBy = "authors")
+    @OneToMany(mappedBy = "category")
     private List<BookEntity> books; 
 }

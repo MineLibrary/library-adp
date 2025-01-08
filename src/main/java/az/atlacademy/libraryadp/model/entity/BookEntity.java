@@ -1,4 +1,4 @@
-package az.atlacademy.library_management.model.entity;
+package az.atlacademy.libraryadp.model.entity;
 
 import java.util.List;
 

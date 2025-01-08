@@ -1,4 +1,4 @@
-package az.atlacademy.library_management.model.entity;
+package az.atlacademy.libraryadp.model.entity;
 
 import java.util.List;
 
@@ -20,17 +20,33 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "categories")
-public class CategoryEntity 
+@Table(name = "students")
+public class StudentEntity 
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; 
 
+    @Column(nullable = false, unique = true)
+    private String finCode; 
+
     @Column(nullable = false)
-    private String name;
+    private String firstName;
+
+    @Column(nullable = false)
+    private String lastName;
+    
+    @Column(nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private String phoneNumber;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private int trustRate = 100;
 
     @ToString.Exclude
-    @OneToMany(mappedBy = "category")
-    private List<BookEntity> books; 
+    @OneToMany(mappedBy = "student")
+    private List<OrderEntity> orders; 
 }
