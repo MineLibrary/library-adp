@@ -33,6 +33,10 @@ public class BookEntity
 
     @Column(nullable = false)
     private String title; 
+
+    @Builder.Default
+    @Column(nullable = false)
+    private int stock = 0; 
     
     @ToString.Exclude
     @ManyToMany
