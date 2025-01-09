@@ -9,9 +9,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthorResponse 
+public class BaseResponse <T>
 {
-    private long id;
-    private String firstName; 
-    private String lastName;
+    private T data; 
+    private String message;
+    private int status; 
+    private boolean success; 
 }

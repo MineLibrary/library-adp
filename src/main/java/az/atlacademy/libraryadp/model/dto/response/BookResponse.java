@@ -23,7 +23,4 @@ public class BookResponse
 
     @ToString.Exclude
     private CategoryResponse category; 
-
-    @ToString.Exclude
-    private List<OrderResponse> orders; 
 }
