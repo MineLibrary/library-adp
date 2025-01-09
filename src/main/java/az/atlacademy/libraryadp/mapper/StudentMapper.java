@@ -14,7 +14,8 @@ public interface StudentMapper
 {
     @Mappings(value = {
         @Mapping(target = "id", ignore = true), 
-        @Mapping(target = "orders", ignore = true)
+        @Mapping(target = "orders", ignore = true), 
+        @Mapping(target = "trustRate", ignore = true)
     })
     public StudentEntity requestToEntity(StudentRequest request); 
     
@@ -22,7 +23,8 @@ public interface StudentMapper
 
     @Mappings(value = {
         @Mapping(target = "id", ignore = true), 
-        @Mapping(target = "orders", ignore = true)
+        @Mapping(target = "orders", ignore = true),
+        @Mapping(target = "trustRate", ignore = true)
     })
     public void convertRequestToEntity(StudentRequest request, @MappingTarget StudentEntity entity);
 }

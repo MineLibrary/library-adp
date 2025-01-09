@@ -15,7 +15,9 @@ public interface OrderMapper
     @Mappings(value = {
         @Mapping(target = "id", ignore = true),
         @Mapping(target = "book", ignore = true), 
-        @Mapping(target = "student", ignore = true)
+        @Mapping(target = "student", ignore = true),
+        @Mapping(target = "orderTimestamp", ignore = true),
+        @Mapping(target = "returnTimestamp", ignore = true)
     })
     public OrderEntity requestToEntity(OrderRequest request); 
 
@@ -24,7 +26,9 @@ public interface OrderMapper
     @Mappings(value = {
         @Mapping(target = "id", ignore = true),
         @Mapping(target = "book", ignore = true),
-        @Mapping(target = "student", ignore = true)
+        @Mapping(target = "student", ignore = true),
+        @Mapping(target = "orderTimestamp", ignore = true),
+        @Mapping(target = "returnTimestamp", ignore = true)
     })
     public void convertRequestToEntity(OrderRequest request, @MappingTarget OrderEntity entity);
 }
