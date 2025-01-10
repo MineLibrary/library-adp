@@ -2,6 +2,7 @@ package az.atlacademy.libraryadp.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import az.atlacademy.libraryadp.model.dto.request.AuthorRequest;
@@ -30,6 +32,7 @@ public class AuthorController
     private static final String LOG_TEMPLATE = "{} request to /api/v1/author{}";
 
     @PostMapping
+    @ResponseStatus(value = HttpStatus.CREATED)
     public BaseResponse<Void> createAuthor(@RequestBody AuthorRequest authorRequest)
     {
         log.info(LOG_TEMPLATE, "POST", "");
@@ -37,6 +40,7 @@ public class AuthorController
     }
 
     @GetMapping
+    @ResponseStatus(value = HttpStatus.OK)
     public BaseResponse<List<AuthorResponse>> getAuthors(
         @RequestParam(value = "pageNumber", required = false, defaultValue = "0") int pageNumber,
         @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
@@ -55,6 +59,7 @@ public class AuthorController
     }
 
     @GetMapping(value = "/{id}")
+    @ResponseStatus(value = HttpStatus.OK)
     public BaseResponse<AuthorResponse> getAuthorById(@PathVariable(value = "id") long authorId)
     {
         log.info(LOG_TEMPLATE, "GET", "/" + authorId);
@@ -62,6 +67,7 @@ public class AuthorController
     }
 
     @PutMapping(value = "/{id}")
+    @ResponseStatus(value = HttpStatus.OK)
     public BaseResponse<Void> updateAuthor(
         @PathVariable(value = "id") long authorId, 
         @RequestBody AuthorRequest authorRequest
@@ -71,6 +77,7 @@ public class AuthorController
     }
 
     @DeleteMapping(value = "/{id}")
+    @ResponseStatus(value = HttpStatus.OK)
     public BaseResponse<Void> deleteAuthor(@PathVariable(value = "id") long authorId)
     {
         log.info(LOG_TEMPLATE, "DELETE", "/" + authorId);
