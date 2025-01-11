@@ -43,19 +43,21 @@ public class AuthorController
     @ResponseStatus(value = HttpStatus.OK)
     public BaseResponse<List<AuthorResponse>> getAuthors(
         @RequestParam(value = "pageNumber", required = false, defaultValue = "0") int pageNumber,
-        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize,
-        @RequestParam(value = "fullName", required = false) String fullName
+        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize
     ){
         log.info(LOG_TEMPLATE, "GET", "");
-        
-        if (fullName == null) 
-        {
-            return authorService.getAuthors(pageNumber, pageSize);
-        }
-        else
-        {
-            return authorService.getAuthorsByFullName(fullName, pageNumber, pageSize);
-        }
+        return authorService.getAuthors(pageNumber, pageSize);
+    }
+
+    @GetMapping(value = "/search-by-full-name")
+    @ResponseStatus(value = HttpStatus.OK)
+    public BaseResponse<List<AuthorResponse>> searchAuthorsByFullName(
+        @RequestParam(value = "fullName") String fullName,
+        @RequestParam(value = "pageNumber", required = false, defaultValue = "0") int pageNumber,
+        @RequestParam(value = "pageSize", required = false, defaultValue = "10") int pageSize
+    ){
+        log.info(LOG_TEMPLATE, "GET", "/search");
+        return authorService.searchAuthorsByFullName(fullName, pageNumber, pageSize);
     }
 
     @GetMapping(value = "/{id}")

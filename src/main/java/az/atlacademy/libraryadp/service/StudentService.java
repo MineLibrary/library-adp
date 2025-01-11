@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import az.atlacademy.libraryadp.exception.FinCodeAlreadyExistsException;
@@ -46,7 +47,7 @@ public class StudentService
         return BaseResponse.<Void>builder()
                 .success(true)
                 .message("Student created successfully.")
-                .status(201)
+                .status(HttpStatus.CREATED.value())
                 .build();
     }
 
@@ -63,7 +64,7 @@ public class StudentService
                 .success(true)
                 .data(studentResponse)
                 .message("Student retrieved successfully.")
-                .status(200)
+                .status(HttpStatus.OK.value())
                 .build();
     }
 
@@ -80,7 +81,7 @@ public class StudentService
                 .success(true)
                 .data(studentResponse)
                 .message("Student retrieved successfully.")
-                .status(200)
+                .status(HttpStatus.OK.value())
                 .build();
     }
 
@@ -100,7 +101,7 @@ public class StudentService
                 .success(true)
                 .data(studentResponses)
                 .message("Students retrieved successfully.")
-                .status(200)
+                .status(HttpStatus.OK.value())
                 .build();
     }
 
@@ -118,7 +119,7 @@ public class StudentService
         return BaseResponse.<Void>builder()
                 .success(true)
                 .message("Student updated successfully.")
-                .status(200)
+                .status(HttpStatus.OK.value())
                 .build();
     }
 
@@ -132,7 +133,7 @@ public class StudentService
         return BaseResponse.<Void>builder()
                 .success(true)
                 .message("Student deleted successfully.")
-                .status(200)
+                .status(HttpStatus.OK.value())
                 .build();
     }
 
@@ -150,7 +151,7 @@ public class StudentService
         return BaseResponse.<Void>builder()
                 .success(true)
                 .message("Trust rate updated successfully.")
-                .status(200)
+                .status(HttpStatus.OK.value())
                 .build();
     }
 }

@@ -81,11 +81,11 @@ public class AuthorService
                 .build();
     }
 
-    public BaseResponse<List<AuthorResponse>> getAuthorsByFullName(
+    public BaseResponse<List<AuthorResponse>> searchAuthorsByFullName(
         String fullName, int pageNumber, int pageSize
     ){
         Pageable pageable = PageRequest.of(pageNumber, pageSize); 
-        Page<AuthorEntity> authorPage = authorRepository.findByFullName(fullName, pageable);
+        Page<AuthorEntity> authorPage = authorRepository.searchByFullName(fullName, pageable);
 
         List<AuthorEntity> authorEntities = authorPage.getContent();
 
@@ -132,5 +132,11 @@ public class AuthorService
                 .message("Author deleted successfully.")
                 .status(HttpStatus.OK.value())
                 .build();
+    }
+
+    protected AuthorEntity getAuthorEntityById(long authorId)
+    {
+        return authorRepository.findById(authorId)
+           .orElseThrow(() -> new AuthorNotFoundException("Author not found with id: " + authorId));
     }
 }

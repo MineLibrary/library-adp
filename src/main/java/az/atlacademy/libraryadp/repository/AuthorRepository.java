@@ -14,5 +14,5 @@ public interface AuthorRepository extends JpaRepository<AuthorEntity, Long>
         SELECT a FROM AuthorEntity a 
             WHERE LOWER(CONCAT(a.firstName, ' ', a.lastName)) LIKE LOWER(CONCAT('%', :fullName, '%'))
     """)
-    Page<AuthorEntity> findByFullName(@Param(value = "fullName") String fullName, Pageable pageable);
+    Page<AuthorEntity> searchByFullName(@Param(value = "fullName") String fullName, Pageable pageable);
 }

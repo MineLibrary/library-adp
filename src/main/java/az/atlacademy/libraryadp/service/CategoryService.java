@@ -105,4 +105,10 @@ public class CategoryService
             .status(HttpStatus.OK.value())
             .build();
     }
+
+    protected CategoryEntity getCategoryEntityById(long categoryId)
+    {
+        return categoryRepository.findById(categoryId)
+           .orElseThrow(() -> new CategoryNotFoundException("Category not found with id : " + categoryId));
+    }
 }
