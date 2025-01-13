@@ -209,4 +209,10 @@ public class BookService
                 .message("Book stock updated successfully.")
                 .build();
     }
+
+    protected BookEntity getBookEntityById(long bookId)
+    {
+        return bookRepository.findById(bookId)
+            .orElseThrow(() -> new BookNotFoundException("Not found book with id : " + bookId));
+    }
 }

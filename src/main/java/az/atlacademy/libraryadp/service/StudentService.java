@@ -154,4 +154,10 @@ public class StudentService
                 .status(HttpStatus.OK.value())
                 .build();
     }
+
+    protected StudentEntity getStudentEntityById(long studentId)
+    {
+        return studentRepository.findById(studentId)
+           .orElseThrow(() -> new StudentNotFoundException("Student not found with id : " + studentId));
+    }
 }
