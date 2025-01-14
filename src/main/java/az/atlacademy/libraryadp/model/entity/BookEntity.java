@@ -37,6 +37,9 @@ public class BookEntity
     @Builder.Default
     @Column(nullable = false)
     private int stock = 0; 
+
+    @Column(name = "s3_file_key")
+    private String s3FileKey; 
     
     @ToString.Exclude
     @ManyToMany

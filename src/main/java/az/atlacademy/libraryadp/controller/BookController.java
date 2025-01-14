@@ -1,8 +1,12 @@
 package az.atlacademy.libraryadp.controller;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -14,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import az.atlacademy.libraryadp.model.dto.request.BookRequest;
 import az.atlacademy.libraryadp.model.dto.response.BaseResponse;
@@ -116,5 +121,44 @@ public class BookController
     ){
         log.info(LOG_TEMPLATE, "PATCH", "/" + bookId + "/update-stock");
         return bookService.updateBookStock(bookId, stock);
+    }
+
+    @PostMapping(value = "/{id}/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BaseResponse<Void>> uploadBookImage(
+        @PathVariable(value = "id") long bookId,
+        @RequestParam(value = "file", required = true) MultipartFile file
+    ){
+        log.info(LOG_TEMPLATE, "POST", "/" + bookId + "/upload-image");
+
+        try
+        {
+            File tempFile = File.createTempFile("upload-", file.getOriginalFilename()); 
+            file.transferTo(tempFile);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(bookService.uploadBookImage(bookId, tempFile));
+        }
+        catch (IOException e) 
+        {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(
+                        BaseResponse.<Void>builder()
+                            .message("Failed to retrieve image: " + e.getMessage().getBytes())
+                            .success(false)
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                            .build()); 
+        }
+    }
+
+    @GetMapping(value = "/{id}/image")
+    public ResponseEntity<byte[]> getBookImage(@PathVariable(value = "id") long bookId)
+    {
+        log.info(LOG_TEMPLATE, "GET", "/" + bookId + "/image");
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(bookService.getBookImage(bookId).getData()); 
     }
 }

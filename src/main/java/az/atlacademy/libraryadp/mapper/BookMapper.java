@@ -16,7 +16,8 @@ public interface BookMapper
         @Mapping(target = "id", ignore = true), 
         @Mapping(target = "authors", ignore = true), 
         @Mapping(target = "orders", ignore = true), 
-        @Mapping(target = "category", ignore = true)
+        @Mapping(target = "category", ignore = true),
+        @Mapping(target = "s3FileKey", ignore = true)
     })
     public BookEntity requestToEntity(BookRequest request); 
 
@@ -26,7 +27,8 @@ public interface BookMapper
         @Mapping(target = "id", ignore = true), 
         @Mapping(target = "authors", ignore = true), 
         @Mapping(target = "orders", ignore = true), 
-        @Mapping(target = "category", ignore = true)
+        @Mapping(target = "category", ignore = true), 
+        @Mapping(target = "s3FileKey", ignore = true)
     })
     public void convertRequestToEntity(BookRequest request, @MappingTarget BookEntity entity); 
 }

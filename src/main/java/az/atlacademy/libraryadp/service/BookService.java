@@ -1,8 +1,10 @@
 package az.atlacademy.libraryadp.service;
 
+import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +31,13 @@ public class BookService
     private final BookMapper bookMapper; 
     private final CategoryService categoryService; 
     private final AuthorService authorService; 
+    private final AmazonS3Service amazonS3Service; 
+
+    @Value("${appliation.image-storage-default-image-file-name.books}")
+    private String defaultImageFileName; 
+
+    @Value("${appliation.image-storage-folders.books}")
+    private String imageFolder; 
 
     @Transactional
     public BaseResponse<Void> createBook(BookRequest bookRequest)
@@ -208,6 +217,47 @@ public class BookService
                 .success(true)
                 .message("Book stock updated successfully.")
                 .build();
+    }
+    
+    @Transactional
+    public BaseResponse<Void> uploadBookImage(long bookId, File bookImage)
+    {
+        BookEntity bookEntity = getBookEntityById(bookId);
+        
+        String imageName = bookImage.getName();
+        String fileKey = imageFolder + "/" + bookEntity.getId() + imageName.substring(imageName.lastIndexOf("."));
+
+        amazonS3Service.uploadFile(fileKey, bookImage);
+
+        bookEntity.setS3FileKey(fileKey);
+        bookRepository.save(bookEntity);
+
+        log.info("Uploaded book image for book with id : {}", bookId);
+
+        return BaseResponse.<Void>builder()
+                .status(HttpStatus.OK.value())
+                .success(true)
+                .message("Book image uploaded successfully.")
+                .build();
+    }
+
+    public BaseResponse<byte[]> getBookImage(long bookId)
+    {
+        BookEntity bookEntity = getBookEntityById(bookId);
+
+        String fileKey; 
+
+        if ((fileKey = bookEntity.getS3FileKey()) == null) 
+        {
+            fileKey = imageFolder + "/" + defaultImageFileName;    
+        }
+
+        BaseResponse<byte[]> response = amazonS3Service.getFile(fileKey);
+        response.setMessage("Book image retrieved successfully.");
+
+        log.info("Image retrieved successfully for book with id : {}", bookEntity.getId());
+    
+        return response;
     }
 
     protected BookEntity getBookEntityById(long bookId)
