@@ -2,6 +2,7 @@ package az.atlacademy.libraryadp.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLConnection;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import az.atlacademy.libraryadp.model.dto.request.BookRequest;
 import az.atlacademy.libraryadp.model.dto.response.BaseResponse;
+import az.atlacademy.libraryadp.model.dto.response.BookImageResponse;
 import az.atlacademy.libraryadp.model.dto.response.BookResponse;
 import az.atlacademy.libraryadp.service.BookService;
 import lombok.RequiredArgsConstructor;
@@ -157,8 +159,17 @@ public class BookController
     {
         log.info(LOG_TEMPLATE, "GET", "/" + bookId + "/image");
 
+        BaseResponse<BookImageResponse> imageResponse = bookService.getBookImage(bookId);
+
+        String contentType = URLConnection.guessContentTypeFromName(imageResponse.getData().getFileKey());
+        if (contentType == null) 
+        {
+            contentType = "application/octet-stream";    
+        }
+
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(bookService.getBookImage(bookId).getData()); 
+                .header("Content-Type", contentType)
+                .body(imageResponse.getData().getImageData()); 
     }
 }

@@ -16,7 +16,7 @@ public class AmazonS3Config
     @Value("${application.credentials.aws.access-key-id}")
     private String accessKeyId; 
 
-    @Value("${application.credentials.aws.secret-access-key")
+    @Value("${application.credentials.aws.secret-access-key}")
     private String secretAccessKey; 
 
     @Bean

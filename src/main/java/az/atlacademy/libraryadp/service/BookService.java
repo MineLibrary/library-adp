@@ -15,6 +15,7 @@ import az.atlacademy.libraryadp.exception.BookNotFoundException;
 import az.atlacademy.libraryadp.mapper.BookMapper;
 import az.atlacademy.libraryadp.model.dto.request.BookRequest;
 import az.atlacademy.libraryadp.model.dto.response.BaseResponse;
+import az.atlacademy.libraryadp.model.dto.response.BookImageResponse;
 import az.atlacademy.libraryadp.model.dto.response.BookResponse;
 import az.atlacademy.libraryadp.model.entity.BookEntity;
 import az.atlacademy.libraryadp.repository.BookRepository;
@@ -241,7 +242,7 @@ public class BookService
                 .build();
     }
 
-    public BaseResponse<byte[]> getBookImage(long bookId)
+    public BaseResponse<BookImageResponse> getBookImage(long bookId)
     {
         BookEntity bookEntity = getBookEntityById(bookId);
 
@@ -252,12 +253,21 @@ public class BookService
             fileKey = imageFolder + "/" + defaultImageFileName;    
         }
 
-        BaseResponse<byte[]> response = amazonS3Service.getFile(fileKey);
-        response.setMessage("Book image retrieved successfully.");
+        BaseResponse<byte[]> amazonS3Response = amazonS3Service.getFile(fileKey);
+
+        BookImageResponse bookImageResponse = BookImageResponse.builder()
+            .fileKey(fileKey)
+            .imageData(amazonS3Response.getData())
+            .build(); 
 
         log.info("Image retrieved successfully for book with id : {}", bookEntity.getId());
     
-        return response;
+        return BaseResponse.<BookImageResponse>builder()
+                .data(bookImageResponse)
+                .status(HttpStatus.OK.value())
+                .message("Book image retrieved successfully.")
+                .success(true)
+                .build();
     }
 
     protected BookEntity getBookEntityById(long bookId)
