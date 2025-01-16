@@ -170,10 +170,38 @@ public class OrderService
     @Transactional
     public BaseResponse<Void> deleteOrder(long orderId)
     {
+        orderRepository.deleteById(orderId);
+
+        log.info("Deleted order with id: {}", orderId);
+
+        return BaseResponse.<Void>builder()
+                .success(true)
+                .message("Order deleted successfully.")
+                .status(HttpStatus.OK.value())
+                .build();
+    }
+
+    @Transactional
+    public BaseResponse<Void> returnOrderBook(long orderId)
+    {
         OrderEntity orderEntity = orderRepository.findById(orderId)
             .orElseThrow(() -> new OrderNotFoundException("Order not found with id : " + orderId));
 
         bookService.updateBookStock(orderEntity.getBook().getId(), orderEntity.getBook().getStock() + 1);
+
+        LocalDateTime returnTime = LocalDateTime.now(); 
+
+        if (returnTime.isAfter(orderEntity.getReturnTimestamp())) 
+        {
+            studentService
+                .updateStudentTrustRate(orderEntity.getStudent().getId(), orderEntity.getStudent().getTrustRate() - 10);
+        }
+        else 
+        {
+            studentService
+                .updateStudentTrustRate(orderEntity.getStudent().getId(), orderEntity.getStudent().getTrustRate() + 10);
+        }
+        
         orderRepository.deleteById(orderId);
 
         log.info("Deleted order with id: {}", orderId);

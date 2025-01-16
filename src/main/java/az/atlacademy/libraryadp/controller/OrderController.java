@@ -97,4 +97,12 @@ public class OrderController
         return orderService.deleteOrder(orderId);
     }
 
+    @PostMapping(value = "/{id}/return-order-book")
+    @ResponseStatus(value = HttpStatus.OK)
+    public BaseResponse<Void> returnOrderBook(@PathVariable(value = "id") long orderId)
+    {
+        log.info(LOG_TEMPLATE, "POST", "/" + orderId + "/return-order-book");
+        return orderService.returnOrderBook(orderId);
+    }
+
 }

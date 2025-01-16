@@ -144,6 +144,10 @@ public class StudentService
             .orElseThrow(() -> new StudentNotFoundException("Student not found with id : " + studentId));
 
         studentEntity.setTrustRate(trustRate);
+
+        if (studentEntity.getTrustRate() < 0) studentEntity.setTrustRate(0);    
+        if (studentEntity.getTrustRate() > 100) studentEntity.setTrustRate(100);
+
         studentRepository.save(studentEntity);
 
         log.info("Updated trust rate for student with id: {}", studentId);

@@ -208,8 +208,11 @@ public class BookService
         BookEntity bookEntity = bookRepository.findById(bookId)
             .orElseThrow(() -> new BookNotFoundException("Not found book with id : " + bookId));
 
-        bookEntity.setStock(stock);
-        bookRepository.save(bookEntity); 
+        if (stock >= 0) 
+        {
+            bookEntity.setStock(stock);
+            bookRepository.save(bookEntity);
+        } 
 
         log.info("Updated stock for book with id : {}", bookId);
 
