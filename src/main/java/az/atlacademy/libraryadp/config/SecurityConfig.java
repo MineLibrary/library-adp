@@ -16,8 +16,12 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+
+import com.nimbusds.jose.jwk.source.ImmutableSecret;
 
 import az.atlacademy.libraryadp.service.AdminUserDetailsService;
 
@@ -35,10 +39,10 @@ public class SecurityConfig
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/**").hasAnyAuthority("ROLE_ADMIN")
-                    .requestMatchers(HttpMethod.PUT, "/api/**").hasAnyAuthority("ROLE_ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyAuthority("ROLE_ADMIN")
-                    .requestMatchers(HttpMethod.PATCH, "/api/**").hasAnyAuthority("ROLE_ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/api/**").authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/api/**").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/api/**").authenticated()
+                    .requestMatchers(HttpMethod.PATCH, "/api/**").authenticated()
                     .anyRequest().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
@@ -54,6 +58,12 @@ public class SecurityConfig
                 .withSecretKey(secretKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
+    }
+
+    @Bean
+    public JwtEncoder jwtEncoder()
+    {
+        return new NimbusJwtEncoder(new ImmutableSecret<>(jwtSecretKey.getBytes()));
     }
 
     @Bean

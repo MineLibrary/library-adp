@@ -79,14 +79,24 @@ public class GlobalExceptionHandler
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
-    @ExceptionHandler(value = Exception.class)
-    public BaseResponse<Void> handleException(Exception exception)
+    @ExceptionHandler(value = AmazonS3Exception.class)
+    public BaseResponse<Void> handleAmazonS3Exception(AmazonS3Exception exception)
     {
-        log.error(exception.getMessage());
         return BaseResponse.<Void>builder()
-                .message("An unexpected error occurred.")
+                .message(exception.getMessage())
                 .success(false)
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .build();
+    }
+
+    @ResponseStatus(value = HttpStatus.NOT_FOUND)
+    @ExceptionHandler(value = AdminUserNotFoundException.class)
+    public BaseResponse<Void> handleAdminUserNotFoundException(AdminUserNotFoundException exception)
+    {
+        return BaseResponse.<Void>builder()
+                .message(exception.getMessage())
+                .success(false)
+                .status(HttpStatus.NOT_FOUND.value())
                 .build();
     }
 }
