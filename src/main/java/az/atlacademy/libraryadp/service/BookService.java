@@ -191,7 +191,17 @@ public class BookService
     @Transactional
     public BaseResponse<Void> deleteBook(long bookId)
     {
+        BookEntity bookEntity = bookRepository.findById(bookId)
+            .orElseThrow(() -> new BookNotFoundException("Book not found with id : " + bookId));
+
+        String imageKey = bookEntity.getS3FileKey(); 
+
         bookRepository.deleteById(bookId);
+        
+        if (imageKey != null) 
+        {
+            amazonS3Service.deleteFile(imageKey);    
+        }
 
         log.info("Deleted book with id: {}", bookId);
 

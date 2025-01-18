@@ -59,5 +59,18 @@ public class AmazonS3Service
             throw new AmazonS3Exception("An error occured : " + e.getMessage());
         }
     }
+
+    public BaseResponse<Void> deleteFile(String key) 
+    {
+        s3Client.deleteObject(bucketName, key);
+
+        log.info("File {} deleted from S3 bucket {}", key, bucketName);
+    
+        return BaseResponse.<Void>builder()
+                .success(true)
+                .message("File deleted successfully.")
+                .status(HttpStatus.OK.value())
+                .build();
+    }
     
 }
