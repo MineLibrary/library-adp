@@ -88,6 +88,7 @@ public class BookController
     }
 
     @GetMapping(value = "/search-by-title")
+    @ResponseStatus(value = HttpStatus.OK)
     public BaseResponse<List<BookResponse>> searchBooksByTitle(
         @RequestParam(value = "title", required = true) String title,
         @RequestParam(value = "pageNumber", required = false, defaultValue = "0") int pageNumber,
