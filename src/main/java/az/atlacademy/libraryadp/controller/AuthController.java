@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping(value = "/auth")
 public class AuthController 
 {
-    private static final String LOG_TEMPLATE = "{} request to /api/v1/author{}";
+    private static final String LOG_TEMPLATE = "{} request to /auth{}";
 
     private final AuthService authService; 
 
