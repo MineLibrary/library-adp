@@ -81,4 +81,15 @@ public class AuthService
                         .build()
                 ).build();  
     }
+
+    public BaseResponse<Boolean> isAuthenticated()
+    {
+        log.info("User is authenticated");
+        return BaseResponse.<Boolean>builder()
+                .success(true)
+                .status(HttpStatus.OK.value())
+                .message("User is authenticated")
+                .data(true)
+                .build();
+    }
 }

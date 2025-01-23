@@ -43,6 +43,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.PUT, "/api/**").hasAnyAuthority("ROLE_ADMIN")
                     .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyAuthority("ROLE_ADMIN")
                     .requestMatchers(HttpMethod.PATCH, "/api/**").hasAnyAuthority("ROLE_ADMIN")
+                    .requestMatchers("/auth/is-authenticated").authenticated()
                     .anyRequest().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
