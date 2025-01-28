@@ -47,7 +47,7 @@ public class BookService
         
         bookEntity.setCategory(categoryService.getCategoryEntityById(bookRequest.getCategoryId()));
         bookEntity.setAuthors(
-            bookRequest.getAuthorIds().stream().map(authorService::getAuthorEntityById).collect(Collectors.toList())
+            bookRequest.getAuthorIds().stream().map(authorService::getAuthorEntityById).collect(Collectors.toSet())
         );
 
         bookRepository.save(bookEntity);
@@ -174,7 +174,7 @@ public class BookService
 
         bookEntity.setCategory(categoryService.getCategoryEntityById(bookRequest.getCategoryId()));
         bookEntity.setAuthors(
-            bookRequest.getAuthorIds().stream().map(authorService::getAuthorEntityById).collect(Collectors.toList())
+            bookRequest.getAuthorIds().stream().map(authorService::getAuthorEntityById).collect(Collectors.toSet())
         );
 
         bookRepository.save(bookEntity);

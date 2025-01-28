@@ -1,9 +1,10 @@
 package az.atlacademy.libraryadp.model.entity;
 
-import java.util.List;
+import java.util.Set;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -42,20 +43,20 @@ public class BookEntity
     private String s3FileKey; 
     
     @ToString.Exclude
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "book_author",
         joinColumns = @JoinColumn(name = "book_id"),
         inverseJoinColumns = @JoinColumn(name = "author_id")
     )
-    private List<AuthorEntity> authors; 
+    private Set<AuthorEntity> authors; 
 
     @ToString.Exclude
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private CategoryEntity category; 
 
     @ToString.Exclude
-    @OneToMany(mappedBy = "book")
-    private List<OrderEntity> orders; 
+    @OneToMany(mappedBy = "book", fetch = FetchType.LAZY)
+    private Set<OrderEntity> orders; 
 }
