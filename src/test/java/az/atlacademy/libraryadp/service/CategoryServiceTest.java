@@ -143,8 +143,36 @@ public class CategoryServiceTest
     {
         CategoryRequest categoryRequest = CategoryRequest.builder().name("drama").build();    
         CategoryEntity foundCategoryEntity = CategoryEntity.builder().id(1L).name("comedy").build();
+        CategoryEntity updatedCategoryEntity = CategoryEntity.builder().id(1L).name("drama").build();
         
-        
+        Mockito.when(categoryRepository.findById(1L)).thenReturn(Optional.of(foundCategoryEntity));
+
+        Mockito
+            .doAnswer(invocation -> {
+                CategoryRequest mapperCategoryRequest = invocation.getArgument(0);
+                CategoryEntity mapperCategoryEntity = invocation.getArgument(1);
+                mapperCategoryEntity.setName(mapperCategoryRequest.getName());
+                return null;
+            })
+            .when(categoryMapper)
+            .convertRequestToEntity(
+                Mockito.any(CategoryRequest.class), 
+                Mockito.any(CategoryEntity.class)
+            );
+
+        Mockito.when(categoryRepository.save(updatedCategoryEntity)).thenReturn(updatedCategoryEntity);
+
+        BaseResponse<Void> serviceResponse = categoryService.updateCategory(1L, categoryRequest); 
+
+        Mockito.verify(categoryRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(categoryMapper, Mockito.times(1))
+            .convertRequestToEntity(categoryRequest, foundCategoryEntity);
+        Mockito.verify(categoryRepository, Mockito.times(1)).save(updatedCategoryEntity);
+        Mockito.verifyNoMoreInteractions(categoryRepository, categoryMapper);
+
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Category updated successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
     }
     
 }
