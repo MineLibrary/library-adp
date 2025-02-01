@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import az.atlacademy.libraryadp.exception.BookNotFoundException;
+import az.atlacademy.libraryadp.exception.BookOutOfStockException;
 import az.atlacademy.libraryadp.mapper.BookMapper;
 import az.atlacademy.libraryadp.model.dto.request.BookRequest;
 import az.atlacademy.libraryadp.model.dto.response.BaseResponse;
@@ -223,6 +224,10 @@ public class BookService
             bookEntity.setStock(stock);
             bookRepository.save(bookEntity);
         } 
+        else 
+        {
+            throw new BookOutOfStockException("Book is out of stock.");
+        }
 
         log.info("Updated stock for book with id : {}", bookId);
 

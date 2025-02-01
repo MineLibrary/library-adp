@@ -48,8 +48,8 @@ public class OrderService
 
         orderEntity.setReturnTimestamp(orderEntity.getOrderTimestamp().plusDays(daysToReturn));
 
-        orderRepository.save(orderEntity);
         bookService.updateBookStock(orderEntity.getBook().getId(), orderEntity.getBook().getStock() - 1);
+        orderRepository.save(orderEntity);
 
         log.info("Created new order for book: {}, student: {}", orderRequest.getBookId(), orderRequest.getStudentId());
 

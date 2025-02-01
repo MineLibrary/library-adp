@@ -136,5 +136,15 @@ public class CategoryServiceTest
             Assertions.assertEquals(foundCategoryResponses.get(i).getName(), serviceResponse.getData().get(i).getName());
         }
     }
+
+    @Test
+    @DisplayName(value = "Testing updateCategory() method when Category exists")
+    public void givenUpdateCategoryWhenCategoryExistsThenReturnSuccessResponse()
+    {
+        CategoryRequest categoryRequest = CategoryRequest.builder().name("drama").build();    
+        CategoryEntity foundCategoryEntity = CategoryEntity.builder().id(1L).name("comedy").build();
+        
+        
+    }
     
 }

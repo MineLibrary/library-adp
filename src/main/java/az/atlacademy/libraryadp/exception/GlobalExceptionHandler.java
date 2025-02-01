@@ -99,4 +99,15 @@ public class GlobalExceptionHandler
                 .status(HttpStatus.NOT_FOUND.value())
                 .build();
     }
+
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(value = BookOutOfStockException.class)
+    public BaseResponse<Void> handleBookOutOfStockException(BookOutOfStockException exception) 
+    {
+        return BaseResponse.<Void>builder()
+                .message(exception.getMessage())
+                .success(false)
+                .status(HttpStatus.BAD_REQUEST.value())
+                .build();
+    }
 }
