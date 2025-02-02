@@ -53,6 +53,7 @@ public class CategoryServiceTest
         Assertions.assertEquals(true, serviceResponse.isSuccess());
         Assertions.assertEquals("Category created successfully.", serviceResponse.getMessage());
         Assertions.assertEquals(HttpStatus.CREATED.value(), serviceResponse.getStatus());
+        Assertions.assertNull(serviceResponse.getData());
     }
 
     @Test
@@ -173,6 +174,71 @@ public class CategoryServiceTest
         Assertions.assertEquals(true, serviceResponse.isSuccess());
         Assertions.assertEquals("Category updated successfully.", serviceResponse.getMessage());
         Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNull(serviceResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateCategory() method when Category does not exist")
+    public void givenUpdateCategoryWhenCategoryDoesNotExistThenThrowCategoryNotFoundException()
+    {
+        Mockito.when(categoryRepository.findById(2L)).thenReturn(Optional.empty());
+
+        CategoryNotFoundException exception = Assertions
+            .assertThrows(
+                CategoryNotFoundException.class, 
+                () -> categoryService.updateCategory(2L, CategoryRequest.builder().name("drama").build())
+            );
+            
+        Assertions.assertEquals("Category not found with id : 2", exception.getMessage());
+        
+        Mockito.verify(categoryRepository, Mockito.times(1)).findById(2L);
+        Mockito.verifyNoMoreInteractions(categoryRepository, categoryMapper);
+    }
+
+    @Test
+    @DisplayName(value = "Testing deleteCategory() method")
+    public void givenDeleteCategoryThenReturnSuccessResponse()
+    {
+        BaseResponse<Void> serviceResponse = categoryService.deleteCategory(1L);
+
+        Mockito.verify(categoryRepository, Mockito.times(1)).deleteById(1L);
+        Mockito.verifyNoMoreInteractions(categoryRepository, categoryMapper);
+        
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Category deleted successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNull(serviceResponse.getData());
     }
     
+    @Test
+    @DisplayName(value = "Testing getCategoryEntityById() method when Category exists")
+    public void givenGetCategoryEntityByIdWhenCategoryExistsThenReturnCategoryEntity()
+    {
+        CategoryEntity foundCategoryEntity = CategoryEntity.builder().id(1L).name("drama").build();
+        
+        Mockito.when(categoryRepository.findById(1L)).thenReturn(Optional.of(foundCategoryEntity));
+        
+        CategoryEntity serviceResponse = categoryService.getCategoryEntityById(1L);
+        
+        Mockito.verify(categoryRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(categoryRepository, categoryMapper);
+        
+        Assertions.assertEquals(1L, serviceResponse.getId());
+        Assertions.assertEquals("drama", serviceResponse.getName());
+    }
+
+    @Test
+    @DisplayName(value = "Testing getCategoryEntityById() method when Category does not exist")
+    public void givenGetCategoryEntityByIdWhenCategoryDoesNotExistThenThrowCategoryNotFoundException()
+    {
+        Mockito.when(categoryRepository.findById(2L)).thenReturn(Optional.empty());
+        
+        CategoryNotFoundException exception = Assertions
+            .assertThrows(CategoryNotFoundException.class, () -> categoryService.getCategoryEntityById(2L));
+        
+        Assertions.assertEquals("Category not found with id : 2", exception.getMessage());
+        
+        Mockito.verify(categoryRepository, Mockito.times(1)).findById(2L);
+        Mockito.verifyNoMoreInteractions(categoryRepository, categoryMapper);
+    }
 }
