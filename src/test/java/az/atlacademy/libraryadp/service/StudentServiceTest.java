@@ -1,5 +1,6 @@
 package az.atlacademy.libraryadp.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Assertions;
@@ -11,6 +12,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 
 import az.atlacademy.libraryadp.exception.FinCodeAlreadyExistsException;
@@ -103,7 +108,7 @@ public class StudentServiceTest
         StudentRequest createStudentRequest = StudentRequest.builder()
             .email("yenifilankes@gmail.com")
             .finCode("5SFJ13D")
-            .firstName("yenifilankes")
+            .firstName("Yenifilankes")
             .lastName("Yenifilankesov")
             .phoneNumber("050 550 50 50")
             .build();
@@ -193,4 +198,153 @@ public class StudentServiceTest
         Mockito.verify(studentRepository, Mockito.times(1)).findByFinCode("5SFJ13D");
         Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
     }
+
+    @Test
+    @DisplayName(value = "Testing getStudentById() method when student exists")
+    public void givenGetStudentByIdWhenStudentExistsThenReturnBaseResponseOfStudentResponse()
+    {
+        StudentEntity foundStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        StudentResponse foundStudentResponse = StudentResponse.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        Mockito.when(studentRepository.findById(1L)).thenReturn(Optional.of(foundStudentEntity));
+        Mockito.when(studentMapper.entityToResponse(foundStudentEntity)).thenReturn(foundStudentResponse);
+        
+        BaseResponse<StudentResponse> serviceResponse = studentService.getStudentById(1L);
+
+        Mockito.verify(studentRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(studentMapper, Mockito.times(1)).entityToResponse(foundStudentEntity);
+        Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
+
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Student retrieved successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNotNull(serviceResponse.getData());
+        Assertions.assertEquals(1L, serviceResponse.getData().getId());
+        Assertions.assertEquals("Filankes", serviceResponse.getData().getFirstName());
+        Assertions.assertEquals("Filankesov", serviceResponse.getData().getLastName());
+        Assertions.assertEquals("050 550 50 50", serviceResponse.getData().getPhoneNumber());
+        Assertions.assertEquals(100, serviceResponse.getData().getTrustRate());
+        Assertions.assertEquals("filankes@gmail.com", serviceResponse.getData().getEmail());
+        Assertions.assertEquals("5SFJ13D", serviceResponse.getData().getFinCode());
+    }
+
+    @Test
+    @DisplayName(value = "Testing getStudentById() method when student does not exist")
+    public void givenGetStudentByIdWhenStudentDoesNotExistThenThrowStudentNotFoundException()
+    {
+        Mockito.when(studentRepository.findById(1L)).thenReturn(Optional.empty());
+
+        StudentNotFoundException exception = Assertions
+            .assertThrows(StudentNotFoundException.class, () -> studentService.getStudentById(1L));
+
+        Assertions.assertEquals("Student not found with id : 1", exception.getMessage());
+
+        Mockito.verify(studentRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
+    }
+
+    @Test
+    @DisplayName(value = "Testing getStudents() method")
+    public void givenGetStudentsThenReturnBaseResponseOfListOfStudents()
+    {
+        int pageNumber = 0, pageSize = 2; 
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        
+        List<StudentEntity> foundStudentEntities = List
+            .of(
+                 StudentEntity.builder()
+                    .id(1L)
+                    .trustRate(100)
+                    .email("filankes@gmail.com")
+                    .finCode("5SFJ13D")
+                    .firstName("Filankes")
+                    .lastName("Filankesov")
+                    .phoneNumber("050 550 50 50")
+                    .build(),
+                 StudentEntity.builder()
+                    .id(2L)
+                    .trustRate(90)
+                    .email("yenifilankes@gmail.com")
+                    .finCode("5SFJ13D")
+                    .firstName("Yenifilankes")
+                    .lastName("Yenifilankesov")
+                    .phoneNumber("050 550 50 50")
+                    .build()
+             );
+
+        List<StudentResponse> foundStudentResponses = List
+            .of(
+                 StudentResponse.builder()
+                    .id(1L)
+                    .trustRate(100)
+                    .email("filankes@gmail.com")
+                    .finCode("5SFJ13D")
+                    .firstName("Filankes")
+                    .lastName("Filankesov")
+                    .phoneNumber("050 550 50 50")
+                    .build(),
+                 StudentResponse.builder()
+                    .id(2L)
+                    .trustRate(90)
+                    .email("yenifilankes@gmail.com")
+                    .finCode("5SFJ13D")
+                    .firstName("Yenifilankes")
+                    .lastName("Yenifilankesov")
+                    .phoneNumber("050 550 50 50")
+                    .build()
+             );
+
+        Page<StudentEntity> foundStudentPage = new PageImpl<>(foundStudentEntities); 
+
+        Mockito.when(studentRepository.findAll(pageable)).thenReturn(foundStudentPage); 
+        for (int i = 0; i < pageSize; i++) 
+        {
+            Mockito.when(studentMapper.entityToResponse(foundStudentEntities.get(i)))
+                .thenReturn(foundStudentResponses.get(i));    
+        }
+
+        BaseResponse<List<StudentResponse>> serviceResponse = studentService.getStudents(pageNumber, pageSize);
+
+        Mockito.verify(studentRepository, Mockito.times(1)).findAll(pageable);
+        for (int i = 0; i < pageSize; i++)
+        {
+            Mockito.verify(studentMapper, Mockito.times(1))
+                .entityToResponse(foundStudentEntities.get(i));
+        }
+        Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
+
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Students retrieved successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNotNull(serviceResponse.getData());
+        Assertions.assertEquals(pageSize, serviceResponse.getData().size());
+        for (int i = 0; i < pageSize; i++) 
+        {
+            Assertions.assertEquals(foundStudentResponses.get(i).getId(), serviceResponse.getData().get(i).getId());
+            Assertions.assertEquals(foundStudentResponses.get(i).getTrustRate(), serviceResponse.getData().get(i).getTrustRate());
+            Assertions.assertEquals(foundStudentResponses.get(i).getEmail(), serviceResponse.getData().get(i).getEmail());
+            Assertions.assertEquals(foundStudentResponses.get(i).getFinCode(), serviceResponse.getData().get(i).getFinCode());
+            Assertions.assertEquals(foundStudentResponses.get(i).getFirstName(), serviceResponse.getData().get(i).getFirstName());
+            Assertions.assertEquals(foundStudentResponses.get(i).getLastName(), serviceResponse.getData().get(i).getLastName());
+            Assertions.assertEquals(foundStudentResponses.get(i).getPhoneNumber(), serviceResponse.getData().get(i).getPhoneNumber());    
+        }
+    }
+
 }
