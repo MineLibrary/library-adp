@@ -106,7 +106,7 @@ public class AuthorService
     public BaseResponse<Void> updateAuthor(Long id, AuthorRequest authorRequest)
     {
         AuthorEntity authorEntity = authorRepository.findById(id)
-            .orElseThrow(() -> new AuthorNotFoundException("Author not found with id: " + id));
+            .orElseThrow(() -> new AuthorNotFoundException("Author not found with id : " + id));
 
         authorMapper.convertRequestToEntity(authorRequest, authorEntity);
         authorRepository.save(authorEntity);
