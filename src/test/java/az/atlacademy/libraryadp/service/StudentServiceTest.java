@@ -347,4 +347,282 @@ public class StudentServiceTest
         }
     }
 
+    @Test
+    @DisplayName(value = "Testing updateStudent() method when student exists")
+    public void givenUpdateStudentWhenStudentExistsThenReturnSuccessResponse()
+    {
+        StudentEntity foundStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        StudentRequest updatedStudentRequest = StudentRequest.builder()
+            .email("yenifilankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Yenifilankes")
+            .lastName("Yenifilankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        Mockito.when(studentRepository.findById(1L)).thenReturn(Optional.of(foundStudentEntity)); 
+
+        Mockito
+            .doAnswer(invocation -> {
+                StudentRequest mapperStudentRequest = invocation.getArgument(0);
+                StudentEntity mapperStudentEntity = invocation.getArgument(1);
+
+                mapperStudentEntity.setEmail(mapperStudentRequest.getEmail());
+                mapperStudentEntity.setFinCode(mapperStudentRequest.getFinCode());
+                mapperStudentEntity.setFirstName(mapperStudentRequest.getFirstName());
+                mapperStudentEntity.setLastName(mapperStudentRequest.getLastName());
+                mapperStudentEntity.setPhoneNumber(mapperStudentRequest.getPhoneNumber());
+
+                return null; 
+            })
+            .when(studentMapper)
+            .convertRequestToEntity(
+                Mockito.any(StudentRequest.class), 
+                Mockito.any(StudentEntity.class)
+            );
+
+        BaseResponse<Void> serviceResponse = studentService.updateStudent(1L, updatedStudentRequest);
+
+        Mockito.verify(studentRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(studentMapper, Mockito.times(1))
+            .convertRequestToEntity(updatedStudentRequest, foundStudentEntity);
+        Mockito.verify(studentRepository, Mockito.times(1)).save(foundStudentEntity);
+        Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
+
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Student updated successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNull(serviceResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateStudent() method when student does not exist")
+    public void givenUpdateStudentWhenStudentDoesNotExistThenThrowStudentNotFoundException() 
+    {
+        StudentRequest updatedStudentRequest = StudentRequest.builder()
+            .email("yenifilankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Yenifilankes")
+            .lastName("Yenifilankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        Mockito.when(studentRepository.findById(1L)).thenReturn(Optional.empty());
+        
+        StudentNotFoundException exception = Assertions
+            .assertThrows(
+                StudentNotFoundException.class, 
+                () -> studentService.updateStudent(1L, updatedStudentRequest)    
+            );
+            
+        Assertions.assertEquals("Student not found with id : 1", exception.getMessage());
+
+        Mockito.verify(studentRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
+    }
+
+    @Test
+    @DisplayName(value = "Testing deleteStudent() method")
+    public void givenDeleteStudentThenReturnSuccessResponse()
+    {
+        BaseResponse<Void> serviceResponse = studentService.deleteStudent(1L); 
+
+        Mockito.verify(studentRepository, Mockito.times(1)).deleteById(1L);
+        Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
+
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Student deleted successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNull(serviceResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateStudentTrustRate() method when student exists")
+    public void givenUpdateStudentTrustRateWhenStudentExistsThenReturnSuccessResponse()
+    {
+        StudentEntity foundStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        StudentEntity updatedStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(90)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        Mockito.when(studentRepository.findById(1L)).thenReturn(Optional.of(foundStudentEntity));
+        Mockito.when(studentRepository.save(updatedStudentEntity)).thenReturn(updatedStudentEntity); 
+
+        BaseResponse<Void> serviceResponse = studentService.updateStudentTrustRate(1L, 90);
+
+        Mockito.verify(studentRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(studentRepository, Mockito.times(1)).save(updatedStudentEntity);
+        Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
+
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Trust rate updated successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNull(serviceResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateStudentTrustRate() method when student does not exist")
+    public void givenUpdateStudentTrustRateWhenStudentDoesNotExistThenThrowStudentNotFoundException() 
+    {
+        Mockito.when(studentRepository.findById(1L)).thenReturn(Optional.empty());
+        
+        StudentNotFoundException exception = Assertions
+            .assertThrows(
+                StudentNotFoundException.class, 
+                () -> studentService.updateStudentTrustRate(1L, 90)    
+            );
+            
+        Assertions.assertEquals("Student not found with id : 1", exception.getMessage());
+
+        Mockito.verify(studentRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateStudentTrustRate() method when trust rate is greater than 100")
+    public void givenUpdateStudentTrustRateWhenTrustRateIsGreaterThanOneHundredThenReturnSuccessResponse()
+    {
+        StudentEntity foundStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        StudentEntity updatedStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        Mockito.when(studentRepository.findById(1L)).thenReturn(Optional.of(foundStudentEntity));
+        Mockito.when(studentRepository.save(updatedStudentEntity)).thenReturn(updatedStudentEntity);
+
+        BaseResponse<Void> serviceResponse = studentService.updateStudentTrustRate(1L, 110);
+        
+        Mockito.verify(studentRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(studentRepository, Mockito.times(1)).save(updatedStudentEntity);
+        Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
+
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Trust rate updated successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNull(serviceResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateStudentTrustRate() method when trust rate is less than zero")
+    public void givenUpdateStudentTrustRateWhenTrustRateIsLessThanZeroThenReturnSuccessResponse()
+    {
+        StudentEntity foundStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        StudentEntity updatedStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(0)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        Mockito.when(studentRepository.findById(1L)).thenReturn(Optional.of(foundStudentEntity));
+        Mockito.when(studentRepository.save(updatedStudentEntity)).thenReturn(updatedStudentEntity);
+
+        BaseResponse<Void> serviceResponse = studentService.updateStudentTrustRate(1L, -10);
+        
+        Mockito.verify(studentRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(studentRepository, Mockito.times(1)).save(updatedStudentEntity);
+        Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
+
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Trust rate updated successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNull(serviceResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing getStudentEntityById() method when student exists")
+    public void givenGetStudentEntityByIdWhenStudentExistsThenReturnStudentEntity()
+    {
+        StudentEntity foundStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        Mockito.when(studentRepository.findById(1L)).thenReturn(Optional.of(foundStudentEntity));
+
+        StudentEntity serviceResponse = studentService.getStudentEntityById(1L);
+
+        Mockito.verify(studentRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
+
+        Assertions.assertNotNull(serviceResponse);
+        Assertions.assertEquals(foundStudentEntity.getId(), serviceResponse.getId());
+        Assertions.assertEquals(foundStudentEntity.getTrustRate(), serviceResponse.getTrustRate());
+        Assertions.assertEquals(foundStudentEntity.getEmail(), serviceResponse.getEmail());
+        Assertions.assertEquals(foundStudentEntity.getFinCode(), serviceResponse.getFinCode());
+        Assertions.assertEquals(foundStudentEntity.getFirstName(), serviceResponse.getFirstName());
+        Assertions.assertEquals(foundStudentEntity.getLastName(), serviceResponse.getLastName());
+        Assertions.assertEquals(foundStudentEntity.getPhoneNumber(), serviceResponse.getPhoneNumber());
+    }
+
+    @Test
+    @DisplayName(value = "Testing getStudentEntityById() method when student does not exist")
+    public void givenGetStudentEntityByIdWhenStudentDoesNotExistThenThrowStudentNotFoundException()
+    {
+        Mockito.when(studentRepository.findById(1L)).thenReturn(Optional.empty());
+        
+        StudentNotFoundException exception = Assertions
+            .assertThrows(StudentNotFoundException.class, () -> studentService.getStudentEntityById(1L));
+            
+        Assertions.assertEquals("Student not found with id : 1", exception.getMessage());
+
+        Mockito.verify(studentRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(studentRepository, studentMapper);
+    }
 }
