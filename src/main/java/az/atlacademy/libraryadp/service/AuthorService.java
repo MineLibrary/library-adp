@@ -47,7 +47,7 @@ public class AuthorService
     public BaseResponse<AuthorResponse> getAuthorById(Long id)
     {
         AuthorEntity authorEntity = authorRepository.findById(id)
-            .orElseThrow(() -> new AuthorNotFoundException("Author not found with id: " + id));
+            .orElseThrow(() -> new AuthorNotFoundException("Author not found with id : " + id));
     
         AuthorResponse authorResponse = authorMapper.entityToResponse(authorEntity); 
 
