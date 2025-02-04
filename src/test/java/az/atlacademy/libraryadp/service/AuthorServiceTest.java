@@ -327,4 +327,57 @@ public class AuthorServiceTest
         Mockito.verify(authorRepository, Mockito.times(1)).findById(1L);
         Mockito.verifyNoMoreInteractions(authorRepository);
     }
+
+    @Test
+    @DisplayName(value = "Testing deleteAuthor() method")
+    public void givenDeleteAuthorThenReturnSuccessResponse()
+    {
+        BaseResponse<Void> serviceResponse = authorService.deleteAuthor(1L);
+        
+        Mockito.verify(authorRepository, Mockito.times(1)).deleteById(1L);
+        Mockito.verifyNoMoreInteractions(authorRepository);
+
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Author deleted successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNull(serviceResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing getAuthorEntityById() method when author exists")
+    public void givenGetAuthorEntityByIdWhenAuthorExistsThenReturnAuthorEntity()
+    {
+        AuthorEntity foundAuthorEntity = AuthorEntity
+            .builder()
+            .id(1L)
+            .firstName("Nizami")
+            .lastName("Ganjavi")
+            .build();
+
+        Mockito.when(authorRepository.findById(1L)).thenReturn(Optional.of(foundAuthorEntity));
+
+        AuthorEntity serviceResponse = authorService.getAuthorEntityById(1L);
+        
+        Mockito.verify(authorRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(authorRepository, authorMapper);
+
+        Assertions.assertEquals(foundAuthorEntity.getId(), serviceResponse.getId());
+        Assertions.assertEquals(foundAuthorEntity.getFirstName(), serviceResponse.getFirstName());
+        Assertions.assertEquals(foundAuthorEntity.getLastName(), serviceResponse.getLastName());
+    }
+
+    @Test
+    @DisplayName(value = "Testing getAuthorEntityById() method when author does not exist")
+    public void givenGetAuthorEntityByIdWhenAuthorDoesNotExistThenThrowAuthorNotFoundException()
+    {
+        Mockito.when(authorRepository.findById(1L)).thenReturn(Optional.empty());
+        
+        AuthorNotFoundException exception = Assertions
+            .assertThrows(AuthorNotFoundException.class, () -> authorService.getAuthorEntityById(1L));
+            
+        Assertions.assertEquals("Author not found with id : 1", exception.getMessage());
+        
+        Mockito.verify(authorRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(authorRepository);
+    }
 }

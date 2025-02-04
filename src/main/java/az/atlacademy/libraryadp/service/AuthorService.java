@@ -137,6 +137,6 @@ public class AuthorService
     protected AuthorEntity getAuthorEntityById(long authorId)
     {
         return authorRepository.findById(authorId)
-           .orElseThrow(() -> new AuthorNotFoundException("Author not found with id: " + authorId));
+           .orElseThrow(() -> new AuthorNotFoundException("Author not found with id : " + authorId));
     }
 }
