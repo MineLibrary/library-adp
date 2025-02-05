@@ -65,7 +65,7 @@ public class BookService
     public BaseResponse<BookResponse> getBookById(long bookId)
     {
         BookEntity bookEntity = bookRepository.findById(bookId)
-            .orElseThrow(() -> new BookNotFoundException("Not found book with id : " + bookId)); 
+            .orElseThrow(() -> new BookNotFoundException("Book not found with id : " + bookId)); 
         
         BookResponse bookResponse = bookMapper.entityToResponse(bookEntity);
 
