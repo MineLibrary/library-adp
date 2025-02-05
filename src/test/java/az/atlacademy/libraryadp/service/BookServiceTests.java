@@ -12,13 +12,20 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 
 import az.atlacademy.libraryadp.exception.AuthorNotFoundException;
 import az.atlacademy.libraryadp.exception.CategoryNotFoundException;
 import az.atlacademy.libraryadp.mapper.BookMapper;
 import az.atlacademy.libraryadp.model.dto.request.BookRequest;
+import az.atlacademy.libraryadp.model.dto.response.AuthorResponse;
 import az.atlacademy.libraryadp.model.dto.response.BaseResponse;
+import az.atlacademy.libraryadp.model.dto.response.BookResponse;
+import az.atlacademy.libraryadp.model.dto.response.CategoryResponse;
 import az.atlacademy.libraryadp.model.entity.AuthorEntity;
 import az.atlacademy.libraryadp.model.entity.BookEntity;
 import az.atlacademy.libraryadp.model.entity.CategoryEntity;
@@ -183,5 +190,99 @@ public class BookServiceTests
         Mockito.verify(categoryService, Mockito.times(1)).getCategoryEntityById(1L);
         Mockito.verify(authorService, Mockito.times(1)).getAuthorEntityById(authorIds.get(0));
         Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+    }
+
+    @Test
+    @DisplayName(value = "Testing getBooksByAuthorId() method when author exists")
+    public void givenGetBooksByAuthorIdWhenAuthorExistsThenReturnBaseResponseOfListOfBooks()
+    {
+        long authorId = 1L; 
+        int pageNumber = 0, pageSize = 2; 
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+        CategoryEntity foundBooksCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build(); 
+        CategoryResponse foundBooksCategoryResponse = CategoryResponse.builder().id(1L).name("Dram").build();
+
+        AuthorEntity foundAuthorEntity = AuthorEntity.builder()
+            .id(authorId)
+            .firstName("Nizami")
+            .lastName("Ganjavi")
+            .build();
+        
+        AuthorResponse foundAuthorResponse = AuthorResponse.builder()
+            .id(authorId)
+            .firstName("Nizami")
+            .lastName("Ganjavi")
+            .build();
+
+        Set<AuthorEntity> foundBooksAuthorEntities = Set.of(foundAuthorEntity); 
+        List<AuthorResponse> foundBooksAuthorResponses = List.of(foundAuthorResponse);
+
+        List<BookEntity> foundBookEntities = List.of(
+            BookEntity.builder()
+                .id(1L)
+                .title("Xamsa")
+                .stock(1)
+                .category(foundBooksCategoryEntity)
+                .authors(foundBooksAuthorEntities)
+                .build(),
+            BookEntity.builder()
+                .id(2L)
+                .title("Leyli and Majnun")
+                .stock(1)
+                .category(foundBooksCategoryEntity)
+                .authors(foundBooksAuthorEntities)
+                .build()
+        );
+
+        List<BookResponse> foundBookResponses = List.of(
+            BookResponse.builder()
+                .id(1L)
+                .title("Xamsa")
+                .stock(1)
+                .category(foundBooksCategoryResponse)
+                .authors(foundBooksAuthorResponses) 
+                .build(),
+            BookResponse.builder()
+                .id(2L)
+                .title("Leyli and Majnun")
+                .stock(1)
+                .category(foundBooksCategoryResponse)
+                .authors(foundBooksAuthorResponses)
+                .build()
+        );
+
+        Page<BookEntity> bookPage = new PageImpl<>(foundBookEntities);
+
+        Mockito.when(authorService.getAuthorEntityById(authorId)).thenReturn(foundAuthorEntity);
+        Mockito.when(bookRepository.findByAuthor(foundAuthorEntity, pageable)).thenReturn(bookPage);
+        for(int i = 0; i < pageSize; i++) 
+        {
+            Mockito.when(bookMapper.entityToResponse(foundBookEntities.get(i)))
+                .thenReturn(foundBookResponses.get(i));
+        }
+
+        BaseResponse<List<BookResponse>> serviceResponse = bookService.getBooksByAuthorId(authorId, pageNumber, pageSize);
+        
+        Mockito.verify(authorService, Mockito.times(1)).getAuthorEntityById(authorId);
+        Mockito.verify(bookRepository, Mockito.times(1)).findByAuthor(foundAuthorEntity, pageable);
+        for(int i = 0; i < pageSize; i++)
+        {
+            Mockito.verify(bookMapper, Mockito.times(1)).entityToResponse(foundBookEntities.get(i));
+        }
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Books retrieved successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNotNull(serviceResponse.getData());
+        for(int i = 0; i < pageSize; i++)
+        {
+            Assertions.assertEquals(foundBookResponses.get(i).getId(), serviceResponse.getData().get(i).getId());
+            Assertions.assertEquals(foundBookResponses.get(i).getTitle(), serviceResponse.getData().get(i).getTitle());
+            Assertions.assertEquals(foundBookResponses.get(i).getStock(), serviceResponse.getData().get(i).getStock());
+            Assertions.assertEquals(foundBookResponses.get(i).getCategory(), serviceResponse.getData().get(i).getCategory());
+            Assertions.assertEquals(foundBookResponses.get(i).getAuthors(), serviceResponse.getData().get(i).getAuthors());
+        }
     }
 }
