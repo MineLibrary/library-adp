@@ -586,4 +586,96 @@ public class BookServiceTests
         Mockito.verify(categoryService, Mockito.times(1)).getCategoryEntityById(categoryId);
         Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
     }
+
+    @Test
+    @DisplayName(value = "Testing searchBooksByTitle() method")
+    public void givenSearchBooksByTitleThenReturnBaseResponseOfListOfBooks()
+    {
+        int pageNumber = 0, pageSize = 2; 
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+        CategoryEntity foundBooksCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build(); 
+        CategoryResponse foundBooksCategoryResponse = CategoryResponse.builder().id(1L).name("Dram").build();
+
+        AuthorEntity foundAuthorEntity = AuthorEntity.builder()
+            .id(1L)
+            .firstName("Nizami")
+            .lastName("Ganjavi")
+            .build();
+        
+        AuthorResponse foundAuthorResponse = AuthorResponse.builder()
+            .id(1L)
+            .firstName("Nizami")
+            .lastName("Ganjavi")
+            .build();
+
+        Set<AuthorEntity> foundBooksAuthorEntities = Set.of(foundAuthorEntity); 
+        List<AuthorResponse> foundBooksAuthorResponses = List.of(foundAuthorResponse);
+
+        List<BookEntity> foundBookEntities = List.of(
+            BookEntity.builder()
+                .id(1L)
+                .title("Xamsa")
+                .stock(1)
+                .category(foundBooksCategoryEntity)
+                .authors(foundBooksAuthorEntities)
+                .build(),
+            BookEntity.builder()
+                .id(2L)
+                .title("Leyli and Majnun")
+                .stock(1)
+                .category(foundBooksCategoryEntity)
+                .authors(foundBooksAuthorEntities)
+                .build()
+        );
+
+        List<BookResponse> foundBookResponses = List.of(
+            BookResponse.builder()
+                .id(1L)
+                .title("Xamsa")
+                .stock(1)
+                .category(foundBooksCategoryResponse)
+                .authors(foundBooksAuthorResponses) 
+                .build(),
+            BookResponse.builder()
+                .id(2L)
+                .title("Leyli and Majnun")
+                .stock(1)
+                .category(foundBooksCategoryResponse)
+                .authors(foundBooksAuthorResponses)
+                .build()
+        );
+
+        Page<BookEntity> bookPage = new PageImpl<>(foundBookEntities);
+
+        Mockito.when(bookRepository.searchByTitle("a", pageable)).thenReturn(bookPage);
+        for(int i = 0; i < pageSize; i++) 
+        {
+            Mockito.when(bookMapper.entityToResponse(foundBookEntities.get(i)))
+                .thenReturn(foundBookResponses.get(i));
+        }
+
+        BaseResponse<List<BookResponse>> serviceResponse = bookService.searchBooksByTitle("a", pageNumber, pageSize);
+
+        Mockito.verify(bookRepository, Mockito.times(1)).searchByTitle("a", pageable);
+        for(int i = 0; i < pageSize; i++)
+        {
+            Mockito.verify(bookMapper, Mockito.times(1))
+                .entityToResponse(foundBookEntities.get(i));
+        }
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+        
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Books retrieved successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNotNull(serviceResponse.getData());
+        for(int i = 0; i < pageSize; i++)
+        {
+            Assertions.assertEquals(foundBookResponses.get(i).getId(), serviceResponse.getData().get(i).getId());
+            Assertions.assertEquals(foundBookResponses.get(i).getTitle(), serviceResponse.getData().get(i).getTitle());
+            Assertions.assertEquals(foundBookResponses.get(i).getStock(), serviceResponse.getData().get(i).getStock());
+            Assertions.assertEquals(foundBookResponses.get(i).getCategory(), serviceResponse.getData().get(i).getCategory());
+            Assertions.assertEquals(foundBookResponses.get(i).getAuthors(), serviceResponse.getData().get(i).getAuthors());
+        }
+    }
 }
