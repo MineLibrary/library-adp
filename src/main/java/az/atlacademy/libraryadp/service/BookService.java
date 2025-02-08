@@ -217,7 +217,7 @@ public class BookService
     public BaseResponse<Void> updateBookStock(long bookId, int stock)
     {
         BookEntity bookEntity = bookRepository.findById(bookId)
-            .orElseThrow(() -> new BookNotFoundException("Not found book with id : " + bookId));
+            .orElseThrow(() -> new BookNotFoundException("Book not found with id : " + bookId));
 
         if (stock >= 0) 
         {
@@ -241,7 +241,8 @@ public class BookService
     @Transactional
     public BaseResponse<Void> uploadBookImage(long bookId, File bookImage)
     {
-        BookEntity bookEntity = getBookEntityById(bookId);
+        BookEntity bookEntity = bookRepository.findById(bookId)
+            .orElseThrow(() -> new BookNotFoundException("Book not found with id : " + bookId));
         
         String imageName = bookImage.getName();
         String fileKey = imageFolder + "/" + bookEntity.getId() + imageName.substring(imageName.lastIndexOf("."));
@@ -262,7 +263,8 @@ public class BookService
 
     public BaseResponse<BookImageResponse> getBookImage(long bookId)
     {
-        BookEntity bookEntity = getBookEntityById(bookId);
+        BookEntity bookEntity = bookRepository.findById(bookId)
+            .orElseThrow(() -> new BookNotFoundException("Book not found with id : " + bookId));
 
         String fileKey; 
 
@@ -291,6 +293,6 @@ public class BookService
     protected BookEntity getBookEntityById(long bookId)
     {
         return bookRepository.findById(bookId)
-            .orElseThrow(() -> new BookNotFoundException("Not found book with id : " + bookId));
+            .orElseThrow(() -> new BookNotFoundException("Book not found with id : " + bookId));
     }
 }

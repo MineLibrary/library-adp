@@ -18,9 +18,11 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.TestPropertySource;
 
 import az.atlacademy.libraryadp.exception.AuthorNotFoundException;
 import az.atlacademy.libraryadp.exception.BookNotFoundException;
+import az.atlacademy.libraryadp.exception.BookOutOfStockException;
 import az.atlacademy.libraryadp.exception.CategoryNotFoundException;
 import az.atlacademy.libraryadp.mapper.BookMapper;
 import az.atlacademy.libraryadp.model.dto.request.BookRequest;
@@ -34,6 +36,10 @@ import az.atlacademy.libraryadp.model.entity.CategoryEntity;
 import az.atlacademy.libraryadp.repository.BookRepository;
 
 @ExtendWith(value = MockitoExtension.class)
+@TestPropertySource(properties = {
+    "appliation.image-storage-folders.books=books", 
+    "appliation.image-storage-default-image-file-name.books=default.webp"
+})
 public class BookServiceTests 
 {
     @InjectMocks
@@ -68,7 +74,7 @@ public class BookServiceTests
             .stock(1)
             .build(); 
 
-        CategoryEntity foundCategoryEntity = CategoryEntity.builder().name("Dram").build(); 
+        CategoryEntity foundCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build(); 
 
         Set<AuthorEntity> foundAuthorEntities = Set
             .of(
@@ -124,7 +130,7 @@ public class BookServiceTests
             Mockito.verify(authorService, Mockito.times(1)).getAuthorEntityById(authorIds.get(i));
         }
         Mockito.verify(bookRepository, Mockito.times(1)).save(createBookEntityWithRelations);
-        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
 
         Assertions.assertEquals(true, serviceResponse.isSuccess());
         Assertions.assertEquals("Book created successfully.", serviceResponse.getMessage());
@@ -158,7 +164,7 @@ public class BookServiceTests
 
         Mockito.verify(bookMapper, Mockito.times(1)).requestToEntity(createBookRequest);
         Mockito.verify(categoryService, Mockito.times(1)).getCategoryEntityById(1L);
-        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
     }
 
     @Test
@@ -179,7 +185,7 @@ public class BookServiceTests
             .stock(1)
             .build();
 
-        CategoryEntity foundCategoryEntity = CategoryEntity.builder().name("Dram").build(); 
+        CategoryEntity foundCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build(); 
 
         Mockito.when(bookMapper.requestToEntity(createBookRequest)).thenReturn(createBookEntity);
         Mockito.when(categoryService.getCategoryEntityById(1L)).thenReturn(foundCategoryEntity);
@@ -191,7 +197,7 @@ public class BookServiceTests
         Mockito.verify(bookMapper, Mockito.times(1)).requestToEntity(createBookRequest);
         Mockito.verify(categoryService, Mockito.times(1)).getCategoryEntityById(1L);
         Mockito.verify(authorService, Mockito.times(1)).getAuthorEntityById(authorIds.get(0));
-        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
     }
 
     @Test
@@ -272,7 +278,7 @@ public class BookServiceTests
         {
             Mockito.verify(bookMapper, Mockito.times(1)).entityToResponse(foundBookEntities.get(i));
         }
-        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
 
         Assertions.assertEquals(true, serviceResponse.isSuccess());
         Assertions.assertEquals("Books retrieved successfully.", serviceResponse.getMessage());
@@ -305,7 +311,7 @@ public class BookServiceTests
             );
 
         Mockito.verify(authorService, Mockito.times(1)).getAuthorEntityById(authorId);
-        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
     }
 
     @Test
@@ -353,7 +359,7 @@ public class BookServiceTests
 
         Mockito.verify(bookRepository, Mockito.times(1)).findById(foundBookEntity.getId());
         Mockito.verify(bookMapper, Mockito.times(1)).entityToResponse(foundBookEntity);
-        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
 
         Assertions.assertEquals(true, serviceResponse.isSuccess());
         Assertions.assertEquals("Book retrieved successfully.", serviceResponse.getMessage());
@@ -378,7 +384,7 @@ public class BookServiceTests
         Assertions.assertEquals("Book not found with id : 1", exception.getMessage());
 
         Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
-        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
     }
 
     @Test
@@ -456,7 +462,7 @@ public class BookServiceTests
         {
             Mockito.verify(bookMapper, Mockito.times(1)).entityToResponse(foundBookEntities.get(i));
         }
-        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
 
         Assertions.assertEquals(true, serviceResponse.isSuccess());
         Assertions.assertEquals("Books retrieved successfully.", serviceResponse.getMessage());
@@ -551,7 +557,7 @@ public class BookServiceTests
         {
             Mockito.verify(bookMapper, Mockito.times(1)).entityToResponse(foundBookEntities.get(i));
         }
-        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
 
         Assertions.assertEquals(true, serviceResponse.isSuccess());
         Assertions.assertEquals("Books retrieved successfully.", serviceResponse.getMessage());
@@ -584,7 +590,7 @@ public class BookServiceTests
             );
 
         Mockito.verify(categoryService, Mockito.times(1)).getCategoryEntityById(categoryId);
-        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
     }
 
     @Test
@@ -663,7 +669,7 @@ public class BookServiceTests
             Mockito.verify(bookMapper, Mockito.times(1))
                 .entityToResponse(foundBookEntities.get(i));
         }
-        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
         
         Assertions.assertEquals(true, serviceResponse.isSuccess());
         Assertions.assertEquals("Books retrieved successfully.", serviceResponse.getMessage());
@@ -678,4 +684,473 @@ public class BookServiceTests
             Assertions.assertEquals(foundBookResponses.get(i).getAuthors(), serviceResponse.getData().get(i).getAuthors());
         }
     }
+
+    @Test
+    @DisplayName(value = "Testing updateBook() method when book, authors and category exist")
+    public void givenUpdateBookWhenBookAndAuthorsAndCategoryExistThenReturnSuccessResponse()
+    {
+        List<Long> authorIds = List.of(1L, 2L);
+        int authorsSize = authorIds.size();
+
+        BookRequest updateBookRequest = BookRequest.builder()
+            .authorIds(authorIds)
+            .categoryId(1L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .build(); 
+
+        CategoryEntity foundCategoryEntity = CategoryEntity.builder().name("Dram").id(1L).build(); 
+
+        Set<AuthorEntity> foundAuthorEntities = Set
+            .of(
+                AuthorEntity.builder()
+                    .id(1L)
+                    .firstName("Sona")
+                    .lastName("Charaipotra")
+                    .build(),
+                AuthorEntity.builder()
+                    .id(2L)
+                    .firstName("Dhonielle")
+                    .lastName("Clayton")
+                    .build()
+            ); 
+
+        BookEntity foundBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(1)
+            .authors(foundAuthorEntities)
+            .category(foundCategoryEntity)
+            .build(); 
+
+        BookEntity updatedBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .authors(foundAuthorEntities)
+            .category(foundCategoryEntity)
+            .build(); 
+
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(foundBookEntity));
+
+        Mockito
+            .doAnswer(invocation -> {
+                BookRequest mapperBookRequest = invocation.getArgument(0); 
+                BookEntity mapperBookEntity = invocation.getArgument(1);
+                
+                mapperBookEntity.setTitle(mapperBookRequest.getTitle());
+                mapperBookEntity.setStock(mapperBookRequest.getStock());
+                
+                return null;
+            })
+            .when(bookMapper)
+            .convertRequestToEntity(
+                Mockito.any(BookRequest.class), 
+                Mockito.any(BookEntity.class)
+            );
+
+        Mockito.when(bookRepository.save(updatedBookEntity)).thenReturn(updatedBookEntity);
+        Mockito.when(categoryService.getCategoryEntityById(1L)).thenReturn(foundCategoryEntity);
+        
+        Iterator<AuthorEntity> authorEntityIterator = foundAuthorEntities.iterator();
+        for(int i = 0; i < authorsSize; i++) 
+        {
+            Mockito.when(authorService.getAuthorEntityById(authorIds.get(i))).thenReturn(authorEntityIterator.next());
+        }
+
+        Mockito.when(bookRepository.save(updatedBookEntity)).thenReturn(updatedBookEntity);
+        
+        BaseResponse<Void> serviceResponse = bookService.updateBook(1L, updateBookRequest);
+
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(bookMapper, Mockito.times(1))
+            .convertRequestToEntity(updateBookRequest, foundBookEntity);
+        Mockito.verify(categoryService, Mockito.times(1)).getCategoryEntityById(1L);
+        for(int i = 0; i < authorsSize; i++)
+        {
+            Mockito.verify(authorService, Mockito.times(1)).getAuthorEntityById(authorIds.get(i));
+        }
+        Mockito.verify(bookRepository, Mockito.times(1)).save(updatedBookEntity);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
+
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Book updated successfully.", serviceResponse.getMessage());
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertNull(serviceResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateBook() method when book does not exist")
+    public void givenUpdateBookWhenBookDoesNotExistThenThrowBookNotFoundException()
+    {
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.empty());
+        
+        BookNotFoundException exception = Assertions
+            .assertThrows(BookNotFoundException.class, () -> bookService.getBookById(1L));
+
+        Assertions.assertEquals("Book not found with id : 1", exception.getMessage());
+
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
+    }
+    
+    @Test
+    @DisplayName(value = "Testing updateBook() method when category does not exist")
+    public void givenUpdateBookWhenCategoryDoesNotExistThenThrowCategoryNotFoundException()
+    {
+        List<Long> authorIds = List.of(1L, 2L);
+
+        BookRequest updateBookRequest = BookRequest.builder()
+            .authorIds(authorIds)
+            .categoryId(2L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .build(); 
+
+        CategoryEntity foundBookCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build(); 
+
+        Set<AuthorEntity> foundBookAuthorEntities = Set
+            .of(
+                AuthorEntity.builder()
+                    .id(1L)
+                    .firstName("Sona")
+                    .lastName("Charaipotra")
+                    .build(),
+                AuthorEntity.builder()
+                    .id(2L)
+                    .firstName("Dhonielle")
+                    .lastName("Clayton")
+                    .build()
+            ); 
+
+        BookEntity foundBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(1)
+            .authors(foundBookAuthorEntities)
+            .category(foundBookCategoryEntity)
+            .build(); 
+
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(foundBookEntity));
+
+        Mockito
+            .doAnswer(invocation -> {
+                BookRequest mapperBookRequest = invocation.getArgument(0); 
+                BookEntity mapperBookEntity = invocation.getArgument(1);
+                
+                mapperBookEntity.setTitle(mapperBookRequest.getTitle());
+                mapperBookEntity.setStock(mapperBookRequest.getStock());
+                
+                return null;
+            })
+            .when(bookMapper)
+            .convertRequestToEntity(
+                Mockito.any(BookRequest.class), 
+                Mockito.any(BookEntity.class)
+            );
+
+        Mockito.when(categoryService.getCategoryEntityById(2L))
+            .thenThrow(new CategoryNotFoundException("Category not found with id : 2"));
+
+        Assertions
+            .assertThrows(
+                CategoryNotFoundException.class, 
+                () -> bookService.updateBook(1L, updateBookRequest)
+            );
+
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(bookMapper, Mockito.times(1))
+            .convertRequestToEntity(updateBookRequest, foundBookEntity);
+        Mockito.verify(categoryService, Mockito.times(1)).getCategoryEntityById(2L);
+        Mockito.verifyNoMoreInteractions(bookMapper, authorService, categoryService, bookRepository, amazonS3Service);
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateBook() method when authors do not exist")
+    public void givenUpdateBookWhenAuthorsDoesNotExistThenThrowAuthorNotFoundException()
+    {
+        List<Long> authorIds = List.of(3L);
+
+        BookRequest updateBookRequest = BookRequest.builder()
+            .authorIds(authorIds)
+            .categoryId(1L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .build();
+
+        CategoryEntity foundBookCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build();
+        
+        Set<AuthorEntity> foundBookAuthorEntities = Set
+            .of(
+                AuthorEntity.builder()
+                    .id(1L)
+                    .firstName("Sona")
+                    .lastName("Charaipotra")
+                    .build(),
+                AuthorEntity.builder()
+                    .id(2L)
+                    .firstName("Dhonielle")
+                    .lastName("Clayton")
+                    .build()
+            ); 
+
+        BookEntity foundBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(1)
+            .authors(foundBookAuthorEntities)
+            .category(foundBookCategoryEntity)
+            .build();
+            
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(foundBookEntity));
+
+        Mockito
+            .doAnswer(invocation -> {
+                BookRequest mapperBookRequest = invocation.getArgument(0); 
+                BookEntity mapperBookEntity = invocation.getArgument(1);
+                
+                mapperBookEntity.setTitle(mapperBookRequest.getTitle());
+                mapperBookEntity.setStock(mapperBookRequest.getStock());
+                
+                return null;
+            })
+            .when(bookMapper)
+            .convertRequestToEntity(
+                Mockito.any(BookRequest.class), 
+                Mockito.any(BookEntity.class)
+            );
+
+        Mockito.when(categoryService.getCategoryEntityById(1L)).thenReturn(foundBookCategoryEntity);
+        Mockito.when(authorService.getAuthorEntityById(authorIds.get(0)))
+            .thenThrow(new AuthorNotFoundException("Author not found with id : " + authorIds.get(0)));
+
+        Assertions
+            .assertThrows(
+                AuthorNotFoundException.class,
+                () -> bookService.updateBook(1L, updateBookRequest)
+            );
+
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(bookMapper, Mockito.times(1))
+            .convertRequestToEntity(updateBookRequest, foundBookEntity);
+        Mockito.verify(categoryService, Mockito.times(1)).getCategoryEntityById(1L);
+        Mockito.verify(authorService, Mockito.times(1)).getAuthorEntityById(authorIds.get(0));
+        Mockito.verifyNoMoreInteractions(bookMapper, authorService, categoryService, bookRepository, amazonS3Service);
+    }
+
+    @Test
+    @DisplayName(value = "Testing deleteBook() method when book and its image exists")
+    public void givenDeleteBookWhenBookAndItsImageExistsThenReturnSuccessResponse()
+    {
+        String bookFileKey = "books/1.jpg";
+        CategoryEntity foundBookCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build();
+        
+        Set<AuthorEntity> foundBookAuthorEntities = Set
+            .of(
+                AuthorEntity.builder()
+                    .id(1L)
+                    .firstName("Sona")
+                    .lastName("Charaipotra")
+                    .build(),
+                AuthorEntity.builder()
+                    .id(2L)
+                    .firstName("Dhonielle")
+                    .lastName("Clayton")
+                    .build()
+            ); 
+
+        BookEntity foundBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(1)
+            .authors(foundBookAuthorEntities)
+            .category(foundBookCategoryEntity)
+            .s3FileKey(bookFileKey)
+            .build();
+
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(foundBookEntity));
+        Mockito.when(amazonS3Service.deleteFile(bookFileKey))
+            .thenReturn(
+                BaseResponse.<Void>builder()
+                    .success(true)
+                    .message("File deleted successfully.")
+                    .status(HttpStatus.OK.value())
+                    .build()
+            );
+        
+        BaseResponse<Void> deleteBookResponse = bookService.deleteBook(1L);
+
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(bookRepository, Mockito.times(1)).deleteById(1L);
+        Mockito.verify(amazonS3Service, Mockito.times(1)).deleteFile(bookFileKey);
+        Mockito.verifyNoMoreInteractions(bookMapper, authorService, categoryService, bookRepository, amazonS3Service);
+
+        Assertions.assertEquals(HttpStatus.OK.value(), deleteBookResponse.getStatus());
+        Assertions.assertEquals("Book deleted successfully.", deleteBookResponse.getMessage());
+        Assertions.assertTrue(deleteBookResponse.isSuccess());
+        Assertions.assertNull(deleteBookResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing deleteBook() method when book exists, but its image doesn't")
+    public void givenDeleteBookWhenBookExistsButItsImageDoesNotExistsThenReturnSuccessResponse()
+    {
+        CategoryEntity foundBookCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build();
+        
+        Set<AuthorEntity> foundBookAuthorEntities = Set
+            .of(
+                AuthorEntity.builder()
+                    .id(1L)
+                    .firstName("Sona")
+                    .lastName("Charaipotra")
+                    .build(),
+                AuthorEntity.builder()
+                    .id(2L)
+                    .firstName("Dhonielle")
+                    .lastName("Clayton")
+                    .build()
+            ); 
+
+        BookEntity foundBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(1)
+            .authors(foundBookAuthorEntities)
+            .category(foundBookCategoryEntity)
+            .build();
+
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(foundBookEntity));
+
+        BaseResponse<Void> deleteBookResponse = bookService.deleteBook(1L);
+
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(bookRepository, Mockito.times(1)).deleteById(1L);
+        Mockito.verifyNoMoreInteractions(bookMapper, authorService, categoryService, bookRepository, amazonS3Service);
+
+        Assertions.assertEquals(HttpStatus.OK.value(), deleteBookResponse.getStatus());
+        Assertions.assertEquals("Book deleted successfully.", deleteBookResponse.getMessage());
+        Assertions.assertTrue(deleteBookResponse.isSuccess());
+        Assertions.assertNull(deleteBookResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing deleteBook() method when book does not exist")
+    public void givenDeleteBookWhenBookDoesNotExistThenThrowBookNotFoundException()
+    {
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.empty());
+        
+        BookNotFoundException exception = Assertions
+            .assertThrows(BookNotFoundException.class, () -> bookService.deleteBook(1L));
+
+        Assertions.assertEquals("Book not found with id : 1", exception.getMessage());
+
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateBookStock() method when book exists")
+    public void givenUpdateBookStockWhenBookExistsThenReturnSuccessResponse()
+    {
+        CategoryEntity foundBookCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build();
+        
+        Set<AuthorEntity> foundBookAuthorEntities = Set
+            .of(
+                AuthorEntity.builder()
+                    .id(1L)
+                    .firstName("Sona")
+                    .lastName("Charaipotra")
+                    .build(),
+                AuthorEntity.builder()
+                    .id(2L)
+                    .firstName("Dhonielle")
+                    .lastName("Clayton")
+                    .build()
+            ); 
+
+        BookEntity foundBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(1)
+            .authors(foundBookAuthorEntities)
+            .category(foundBookCategoryEntity)
+            .build();
+
+        BookEntity updatedBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(2)
+            .authors(foundBookAuthorEntities)
+            .category(foundBookCategoryEntity)
+            .build();
+
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(foundBookEntity));
+        Mockito.when(bookRepository.save(updatedBookEntity)).thenReturn(updatedBookEntity);
+        
+        BaseResponse<Void> serviceResponse = bookService.updateBookStock(1L, 2);
+        
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(bookRepository, Mockito.times(1)).save(updatedBookEntity);
+
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertEquals("Book stock updated successfully.", serviceResponse.getMessage());
+        Assertions.assertTrue(serviceResponse.isSuccess());
+        Assertions.assertNull(serviceResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateBookStock() method when stock is less than 0")
+    public void givenUpdateBookStockWhenStockIsLessThanZeroThenThrowBookOutOfStockException()
+    {
+        CategoryEntity foundBookCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build();
+        
+        Set<AuthorEntity> foundBookAuthorEntities = Set
+            .of(
+                AuthorEntity.builder()
+                    .id(1L)
+                    .firstName("Sona")
+                    .lastName("Charaipotra")
+                    .build(),
+                AuthorEntity.builder()
+                    .id(2L)
+                    .firstName("Dhonielle")
+                    .lastName("Clayton")
+                    .build()
+            ); 
+
+        BookEntity foundBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(0)
+            .authors(foundBookAuthorEntities)
+            .category(foundBookCategoryEntity)
+            .build();
+
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(foundBookEntity));
+
+        BookOutOfStockException exception = Assertions
+            .assertThrows(BookOutOfStockException.class, () -> bookService.updateBookStock(1L, -1));
+
+        Assertions.assertEquals("Book is out of stock.", exception.getMessage());
+
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(bookRepository, bookMapper, categoryService, authorService, amazonS3Service);
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateBookStock() method when book doesn't exist")
+    public void givenUpdateBookStockWhenBookDoesNotExistThenThrowBookNotFoundException() 
+    {
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.empty());
+        
+        BookNotFoundException exception = Assertions
+            .assertThrows(BookNotFoundException.class, () -> bookService.updateBookStock(1L, 2));
+
+        Assertions.assertEquals("Book not found with id : 1", exception.getMessage());
+
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
+    }
+
+    
 }
