@@ -1,11 +1,13 @@
 package az.atlacademy.libraryadp.service;
 
+import java.io.File;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,7 +20,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import az.atlacademy.libraryadp.exception.AuthorNotFoundException;
 import az.atlacademy.libraryadp.exception.BookNotFoundException;
@@ -28,6 +30,7 @@ import az.atlacademy.libraryadp.mapper.BookMapper;
 import az.atlacademy.libraryadp.model.dto.request.BookRequest;
 import az.atlacademy.libraryadp.model.dto.response.AuthorResponse;
 import az.atlacademy.libraryadp.model.dto.response.BaseResponse;
+import az.atlacademy.libraryadp.model.dto.response.BookImageResponse;
 import az.atlacademy.libraryadp.model.dto.response.BookResponse;
 import az.atlacademy.libraryadp.model.dto.response.CategoryResponse;
 import az.atlacademy.libraryadp.model.entity.AuthorEntity;
@@ -36,10 +39,6 @@ import az.atlacademy.libraryadp.model.entity.CategoryEntity;
 import az.atlacademy.libraryadp.repository.BookRepository;
 
 @ExtendWith(value = MockitoExtension.class)
-@TestPropertySource(properties = {
-    "appliation.image-storage-folders.books=books", 
-    "appliation.image-storage-default-image-file-name.books=default.webp"
-})
 public class BookServiceTests 
 {
     @InjectMocks
@@ -59,6 +58,14 @@ public class BookServiceTests
 
     @Mock
     private AmazonS3Service amazonS3Service;
+
+
+    @BeforeEach
+    public void setUp()
+    {
+        ReflectionTestUtils.setField(bookService, "defaultImageFileName", "default.webp");
+        ReflectionTestUtils.setField(bookService, "imageFolder", "books");
+    }
 
     @Test
     @DisplayName(value = "Testing createBook() method when authors and category exist")
@@ -1152,5 +1159,285 @@ public class BookServiceTests
         Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
     }
 
-    
+    @Test
+    @DisplayName(value = "Testing uploadBookImage() method when book exists")
+    public void givenUploadBookImageWhenBookExistsThenReturnSuccessResponse()
+    {
+        File bookImage = new File("/books/book1.jpg");
+        String imageKey = "books/1.jpg";
+
+        CategoryEntity foundBookCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build();
+        
+        Set<AuthorEntity> foundBookAuthorEntities = Set
+            .of(
+                AuthorEntity.builder()
+                    .id(1L)
+                    .firstName("Sona")
+                    .lastName("Charaipotra")
+                    .build(),
+                AuthorEntity.builder()
+                    .id(2L)
+                    .firstName("Dhonielle")
+                    .lastName("Clayton")
+                    .build()
+            ); 
+
+        BookEntity foundBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(0)
+            .authors(foundBookAuthorEntities)
+            .category(foundBookCategoryEntity)
+            .build();
+
+        BookEntity updateBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(0)
+            .authors(foundBookAuthorEntities)
+            .category(foundBookCategoryEntity)
+            .s3FileKey(imageKey)
+            .build();
+
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(foundBookEntity));
+        
+        Mockito.when(amazonS3Service.uploadFile(imageKey, bookImage))
+            .thenReturn(
+                BaseResponse.<Void>builder()
+                    .status(HttpStatus.OK.value())
+                    .message("File uploaded successfully.")
+                    .success(true)
+                    .build()
+            );
+        
+        Mockito.when(bookRepository.save(updateBookEntity)).thenReturn(updateBookEntity);
+
+        BaseResponse<Void> serviceResponse = bookService.uploadBookImage(1L, bookImage); 
+
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(amazonS3Service, Mockito.times(1)).uploadFile(imageKey, bookImage);
+        Mockito.verify(bookRepository, Mockito.times(1)).save(updateBookEntity); 
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
+
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertEquals("Book image uploaded successfully.", serviceResponse.getMessage());
+        Assertions.assertTrue(serviceResponse.isSuccess());
+        Assertions.assertNull(serviceResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing uploadBookImage() method when book doesn't exist")
+    public void givenUploadBookImageWhenBookDoesNotExistThenThrowBookNotFoundException()
+    {
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.empty());
+        
+        BookNotFoundException exception = Assertions
+            .assertThrows(BookNotFoundException.class, () -> bookService.updateBookStock(1L, 2));
+
+        Assertions.assertEquals("Book not found with id : 1", exception.getMessage());
+
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
+    }
+
+    @Test
+    @DisplayName(value = "Testing getBookImage() method when book and its image exists")
+    public void givenGetBookImageWhenBookAndItsImageExistsThenReturnSuccessResponse()
+    {
+        String bookFileKey = "books/1.jpg";
+        byte[] imageData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+        CategoryEntity foundBookCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build();
+        
+        Set<AuthorEntity> foundBookAuthorEntities = Set
+            .of(
+                AuthorEntity.builder()
+                    .id(1L)
+                    .firstName("Sona")
+                    .lastName("Charaipotra")
+                    .build(),
+                AuthorEntity.builder()
+                    .id(2L)
+                    .firstName("Dhonielle")
+                    .lastName("Clayton")
+                    .build()
+            ); 
+
+        BookEntity foundBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(0)
+            .authors(foundBookAuthorEntities)
+            .category(foundBookCategoryEntity)
+            .s3FileKey(bookFileKey)
+            .build();
+
+        BookImageResponse bookImageResponse = BookImageResponse.builder()
+            .fileKey(bookFileKey)
+            .imageData(imageData)
+            .build();
+
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(foundBookEntity));
+
+        Mockito.when(amazonS3Service.getFile(bookFileKey))
+            .thenReturn(
+                BaseResponse.<byte[]>builder()
+                    .success(true)
+                    .data(imageData)
+                    .message("File retrieved successfully.")
+                    .status(HttpStatus.OK.value())
+                    .build()
+            );
+
+        BaseResponse<BookImageResponse> serviceResponse = bookService.getBookImage(1L);
+        
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(amazonS3Service, Mockito.times(1)).getFile(bookFileKey);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
+
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertEquals("Book image retrieved successfully.", serviceResponse.getMessage());
+        Assertions.assertTrue(serviceResponse.isSuccess());
+        Assertions.assertEquals(bookImageResponse, serviceResponse.getData());
+        Assertions.assertNotNull(serviceResponse.getData());
+        Assertions.assertEquals(bookFileKey, serviceResponse.getData().getFileKey());
+        Assertions.assertEquals(imageData, serviceResponse.getData().getImageData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing getBookImage() method when book exists but its image doesn't")
+    public void givenGetBookImageWhenBookExistsButItsImageDoesntExistThenReturnSuccessResponse()
+    {
+        String bookFileKey = "books/default.webp";
+        byte[] imageData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+        CategoryEntity foundBookCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build();
+        
+        Set<AuthorEntity> foundBookAuthorEntities = Set
+            .of(
+                AuthorEntity.builder()
+                    .id(1L)
+                    .firstName("Sona")
+                    .lastName("Charaipotra")
+                    .build(),
+                AuthorEntity.builder()
+                    .id(2L)
+                    .firstName("Dhonielle")
+                    .lastName("Clayton")
+                    .build()
+            ); 
+
+        BookEntity foundBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(0)
+            .authors(foundBookAuthorEntities)
+            .category(foundBookCategoryEntity)
+            .build();
+
+        BookImageResponse bookImageResponse = BookImageResponse.builder()
+            .fileKey(bookFileKey)
+            .imageData(imageData)
+            .build();
+
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(foundBookEntity));
+
+        Mockito.when(amazonS3Service.getFile(bookFileKey))
+            .thenReturn(
+                BaseResponse.<byte[]>builder()
+                    .success(true)
+                    .data(imageData)
+                    .message("File retrieved successfully.")
+                    .status(HttpStatus.OK.value())
+                    .build()
+            );
+
+        BaseResponse<BookImageResponse> serviceResponse = bookService.getBookImage(1L);
+        
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(amazonS3Service, Mockito.times(1)).getFile(bookFileKey);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
+
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertEquals("Book image retrieved successfully.", serviceResponse.getMessage());
+        Assertions.assertTrue(serviceResponse.isSuccess());
+        Assertions.assertEquals(bookImageResponse, serviceResponse.getData());
+        Assertions.assertNotNull(serviceResponse.getData());
+        Assertions.assertEquals(bookFileKey, serviceResponse.getData().getFileKey());
+        Assertions.assertEquals(imageData, serviceResponse.getData().getImageData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing getBookImage() method when book doesn't exist")
+    public void givenGetBookImageWhenBookDoesNotExistThenThrowBookNotFoundException()
+    {
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.empty());
+        
+        BookNotFoundException exception = Assertions
+            .assertThrows(BookNotFoundException.class, () -> bookService.updateBookStock(1L, 2));
+
+        Assertions.assertEquals("Book not found with id : 1", exception.getMessage());
+
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
+    }
+
+    @Test
+    @DisplayName(value = "Testing getBookEntityById() method when book exists")
+    public void givenGetBookEntityByIdWhenBookExistsThenReturnBookEntity()
+    {
+        CategoryEntity foundBookCategoryEntity = CategoryEntity.builder().id(1L).name("Dram").build();
+        
+        Set<AuthorEntity> foundBookAuthorEntities = Set
+            .of(
+                AuthorEntity.builder()
+                    .id(1L)
+                    .firstName("Sona")
+                    .lastName("Charaipotra")
+                    .build(),
+                AuthorEntity.builder()
+                    .id(2L)
+                    .firstName("Dhonielle")
+                    .lastName("Clayton")
+                    .build()
+            ); 
+
+        BookEntity foundBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(0)
+            .authors(foundBookAuthorEntities)
+            .category(foundBookCategoryEntity)
+            .build();
+
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.of(foundBookEntity));
+        
+        BookEntity serviceResponse = bookService.getBookEntityById(1L);
+        
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
+        
+        Assertions.assertNotNull(serviceResponse);
+        Assertions.assertEquals(foundBookEntity.getId(), serviceResponse.getId());
+        Assertions.assertEquals(foundBookEntity.getTitle(), serviceResponse.getTitle());
+        Assertions.assertEquals(foundBookEntity.getStock(), serviceResponse.getStock());
+        Assertions.assertEquals(foundBookEntity.getAuthors(), serviceResponse.getAuthors());
+        Assertions.assertEquals(foundBookEntity.getCategory(), serviceResponse.getCategory());
+        Assertions.assertEquals(foundBookEntity.getS3FileKey(), serviceResponse.getS3FileKey());
+    }
+
+    @Test
+    @DisplayName(value = "Testing getBookEntityById() method when book does not exist")
+    public void givenGetBookEntityByIdWhenBookDoesNotExistThenThrowBookNotFoundException() 
+    {
+        Mockito.when(bookRepository.findById(1L)).thenReturn(Optional.empty());
+        
+        BookNotFoundException exception = Assertions
+           .assertThrows(BookNotFoundException.class, () -> bookService.getBookEntityById(1L));
+
+        Assertions.assertEquals("Book not found with id : 1", exception.getMessage());
+        
+        Mockito.verify(bookRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(bookMapper, categoryService, authorService, bookRepository, amazonS3Service);
+    }
 }
