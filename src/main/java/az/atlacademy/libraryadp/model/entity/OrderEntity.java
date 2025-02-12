@@ -39,11 +39,9 @@ public class OrderEntity
     @JoinColumn(name = "student_id")
     private StudentEntity student; 
 
-    @Builder.Default
     @Column(nullable = false)
-    private LocalDateTime orderTimestamp = LocalDateTime.now();
+    private LocalDateTime orderTimestamp;
 
-    @Builder.Default
     @Column(nullable = false)
-    private LocalDateTime returnTimestamp = LocalDateTime.now().plusDays(7);
+    private LocalDateTime returnTimestamp;
 }

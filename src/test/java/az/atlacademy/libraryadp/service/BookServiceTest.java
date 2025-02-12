@@ -39,7 +39,7 @@ import az.atlacademy.libraryadp.model.entity.CategoryEntity;
 import az.atlacademy.libraryadp.repository.BookRepository;
 
 @ExtendWith(value = MockitoExtension.class)
-public class BookServiceTests 
+public class BookServiceTest 
 {
     @InjectMocks
     private BookService bookService;
