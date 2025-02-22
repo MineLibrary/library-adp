@@ -510,4 +510,431 @@ public class OrderServiceTest
         Mockito.verify(orderRepository, Mockito.times(1)).findById(1L);
         Mockito.verifyNoMoreInteractions(bookService, studentService, orderRepository, orderMapper);
     }
+
+    @Test
+    @DisplayName(value = "Testing getOrdersByStudentId() method when student exists")
+    public void givenGetOrdersByStudentIdWhenStudentExistsThenReturnBaseResponseOfListOfOrders()
+    {
+        int pageNumber = 0, pageSize = 1; 
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+        int daysToReturn = 5; 
+        LocalDateTime orderTime = LocalDateTime.now();
+        LocalDateTime returnTime = orderTime.plusDays(daysToReturn); 
+
+        BookEntity foundOrderBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .build();
+
+        BookResponse foundOrderBookResponse = BookResponse.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .build();
+
+        StudentEntity foundOrderStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        StudentResponse foundOrderStudentResponse = StudentResponse.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        List<OrderEntity> foundOrderEntities = List
+            .of(
+                OrderEntity.builder()
+                    .id(1L)
+                    .book(foundOrderBookEntity)
+                    .student(foundOrderStudentEntity)
+                    .orderTimestamp(orderTime)
+                    .returnTimestamp(returnTime)
+                    .build()
+            );
+
+        List<OrderResponse> foundOrderResponses = List
+            .of(
+                OrderResponse.builder()
+                    .id(1L)
+                    .book(foundOrderBookResponse)
+                    .student(foundOrderStudentResponse)
+                    .orderTimestamp(orderTime)
+                    .returnTimestamp(returnTime)
+                    .build()
+            );
+
+        Page<OrderEntity> orderPage = new PageImpl<>(foundOrderEntities);
+
+        Mockito.when(studentService.getStudentEntityById(1L)).thenReturn(foundOrderStudentEntity);
+        Mockito.when(orderRepository.findByStudent(foundOrderStudentEntity, pageable)).thenReturn(orderPage);
+        for(int i = 0; i < pageSize; i++) 
+        {
+            Mockito.when(orderMapper.entityToResponse(foundOrderEntities.get(i)))
+                .thenReturn(foundOrderResponses.get(i));
+        }
+
+        BaseResponse<List<OrderResponse>> serviceResponse = orderService.getOrdersByStudentId(1L, pageNumber, pageSize);
+
+        Mockito.verify(studentService, Mockito.times(1)).getStudentEntityById(1L);
+        Mockito.verify(orderRepository, Mockito.times(1)).findByStudent(foundOrderStudentEntity, pageable);
+        Mockito.verify(orderMapper, Mockito.times(pageSize)).entityToResponse(foundOrderEntities.get(0));
+        Mockito.verifyNoMoreInteractions(bookService, studentService, orderRepository, orderMapper);
+
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Orders retrieved successfully.", serviceResponse.getMessage());
+        Assertions.assertNotNull(serviceResponse.getData());
+        Assertions.assertEquals(foundOrderResponses.size(), serviceResponse.getData().size());
+        for(int i = 0; i < pageSize; i++) 
+        {
+            Assertions.assertEquals(foundOrderResponses.get(i).getBook(), serviceResponse.getData().get(i).getBook());
+            Assertions.assertEquals(foundOrderResponses.get(i).getStudent(), serviceResponse.getData().get(i).getStudent());
+            Assertions.assertEquals(foundOrderResponses.get(i).getOrderTimestamp(), serviceResponse.getData().get(i).getOrderTimestamp());
+            Assertions.assertEquals(foundOrderResponses.get(i).getReturnTimestamp(), serviceResponse.getData().get(i).getReturnTimestamp());
+        }
+    }
+
+    @Test
+    @DisplayName(value = "Testing getOrdersByStudentId() method when student does not exist")
+    public void givenGetOrdersByStudentIdWhenStudentDoesNotExistThenThrowStudentNotFoundException()
+    {
+        Mockito.when(studentService.getStudentEntityById(1L))
+            .thenThrow(new StudentNotFoundException("Student not found with id : 1"));
+        
+        Assertions
+            .assertThrows(
+                StudentNotFoundException.class, 
+                () -> orderService.getOrdersByStudentId(1L, 0, 1)
+            );
+        
+        Mockito.verify(studentService, Mockito.times(1)).getStudentEntityById(1L); 
+        Mockito.verifyNoMoreInteractions(bookService, studentService, orderRepository, orderMapper);
+    }
+    
+    @Test
+    @DisplayName(value = "Testing getOrdersByBookId() method when book exists")
+    public void givenGetOrdersByBookIdWhenBookExistsThenReturnBaseResponseOfListOfOrders()
+    {
+        int pageNumber = 0, pageSize = 1; 
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+        int daysToReturn = 5; 
+        LocalDateTime orderTime = LocalDateTime.now();
+        LocalDateTime returnTime = orderTime.plusDays(daysToReturn); 
+
+        BookEntity foundOrderBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .build();
+
+        BookResponse foundOrderBookResponse = BookResponse.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .build();
+
+        StudentEntity foundOrderStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        StudentResponse foundOrderStudentResponse = StudentResponse.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        List<OrderEntity> foundOrderEntities = List
+            .of(
+                OrderEntity.builder()
+                    .id(1L)
+                    .book(foundOrderBookEntity)
+                    .student(foundOrderStudentEntity)
+                    .orderTimestamp(orderTime)
+                    .returnTimestamp(returnTime)
+                    .build()
+            );
+
+        List<OrderResponse> foundOrderResponses = List
+            .of(
+                OrderResponse.builder()
+                    .id(1L)
+                    .book(foundOrderBookResponse)
+                    .student(foundOrderStudentResponse)
+                    .orderTimestamp(orderTime)
+                    .returnTimestamp(returnTime)
+                    .build()
+            );
+
+        Page<OrderEntity> orderPage = new PageImpl<>(foundOrderEntities);
+
+        Mockito.when(bookService.getBookEntityById(1L)).thenReturn(foundOrderBookEntity);
+        Mockito.when(orderRepository.findByBook(foundOrderBookEntity, pageable)).thenReturn(orderPage);
+        for(int i = 0; i < pageSize; i++) 
+        {
+            Mockito.when(orderMapper.entityToResponse(foundOrderEntities.get(i)))
+                .thenReturn(foundOrderResponses.get(i));
+        }
+
+        BaseResponse<List<OrderResponse>> serviceResponse = orderService.getOrdersByBookId(1L, pageNumber, pageSize);
+
+        Mockito.verify(bookService, Mockito.times(1)).getBookEntityById(1L);
+        Mockito.verify(orderRepository, Mockito.times(1)).findByBook(foundOrderBookEntity, pageable);
+        Mockito.verify(orderMapper, Mockito.times(pageSize)).entityToResponse(foundOrderEntities.get(0));
+        Mockito.verifyNoMoreInteractions(bookService, studentService, orderRepository, orderMapper);
+
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Orders retrieved successfully.", serviceResponse.getMessage());
+        Assertions.assertNotNull(serviceResponse.getData());
+        Assertions.assertEquals(foundOrderResponses.size(), serviceResponse.getData().size());
+        for(int i = 0; i < pageSize; i++) 
+        {
+            Assertions.assertEquals(foundOrderResponses.get(i).getBook(), serviceResponse.getData().get(i).getBook());
+            Assertions.assertEquals(foundOrderResponses.get(i).getStudent(), serviceResponse.getData().get(i).getStudent());
+            Assertions.assertEquals(foundOrderResponses.get(i).getOrderTimestamp(), serviceResponse.getData().get(i).getOrderTimestamp());
+            Assertions.assertEquals(foundOrderResponses.get(i).getReturnTimestamp(), serviceResponse.getData().get(i).getReturnTimestamp());
+        }
+    }
+
+    @Test
+    @DisplayName(value = "Testing getOrdersByBookId() method when book does not exist")
+    public void givenGetOrdersByBookIdWhenBookDoesNotExistThenThrowBookNotFoundException()
+    {
+        Mockito.when(bookService.getBookEntityById(1L))
+            .thenThrow(new BookNotFoundException("Book not found with id : 1"));
+        
+        Assertions
+            .assertThrows(
+                BookNotFoundException.class, 
+                () -> orderService.getOrdersByBookId(1L, 0, 1)
+            );
+        
+        Mockito.verify(bookService, Mockito.times(1)).getBookEntityById(1L); 
+        Mockito.verifyNoMoreInteractions(bookService, studentService, orderRepository, orderMapper);
+    }
+    
+    @Test
+    @DisplayName(value = "Testing updateOrder() method when order, book, and student exist")
+    public void givenUpdateOrderWhenOrderAndBookAndStudentExistsThenReturnSuccessResponse()
+    {
+        int daysToReturn = 5, updatedDaysToReturn = 6; 
+        LocalDateTime orderTime = LocalDateTime.of(2025, 2, 23, 12, 9, 31);
+        LocalDateTime returnTime = orderTime.plusDays(daysToReturn); 
+        LocalDateTime updatedReturnTime = orderTime.plusDays(updatedDaysToReturn);
+
+        OrderRequest updateOrderRequest = OrderRequest.builder()
+            .bookId(1L)
+            .studentId(1L)
+            .daysToReturn(updatedDaysToReturn)
+            .build();
+
+        BookEntity foundOrderBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .build();
+
+        StudentEntity foundOrderStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        OrderEntity foundOrderEntity = OrderEntity.builder()
+            .id(1L)
+            .book(foundOrderBookEntity)
+            .student(foundOrderStudentEntity)
+            .orderTimestamp(orderTime)
+            .returnTimestamp(returnTime)
+            .build(); 
+            
+        OrderEntity updatedOrderEntity = OrderEntity.builder()
+            .id(1L)
+            .book(foundOrderBookEntity)
+            .student(foundOrderStudentEntity)
+            .orderTimestamp(orderTime)
+            .returnTimestamp(updatedReturnTime)
+            .build(); 
+
+        Mockito.when(orderRepository.findById(1L)).thenReturn(Optional.of(foundOrderEntity));
+        Mockito.when(bookService.getBookEntityById(1L)).thenReturn(foundOrderBookEntity);
+        Mockito.when(studentService.getStudentEntityById(1L)).thenReturn(foundOrderStudentEntity);
+        Mockito.when(orderRepository.save(updatedOrderEntity)).thenReturn(updatedOrderEntity);
+
+        BaseResponse<Void> serviceResponse = orderService.updateOrder(1L, updateOrderRequest);
+
+        Mockito.verify(orderRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(orderMapper, Mockito.times(1)).convertRequestToEntity(updateOrderRequest, foundOrderEntity);
+        Mockito.verify(bookService, Mockito.times(1)).getBookEntityById(1L);
+        Mockito.verify(studentService, Mockito.times(1)).getStudentEntityById(1L);
+        Mockito.verify(orderRepository, Mockito.times(1)).save(updatedOrderEntity);
+        Mockito.verifyNoMoreInteractions(bookService, studentService, orderMapper, orderRepository);
+
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Order updated successfully.", serviceResponse.getMessage());
+        Assertions.assertNull(serviceResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateOrder() method when order, book exist but student doesn't")
+    public void givenUpdateOrderWhenOrderAndBookExistsButStudentDoesNotExistsThenThrowStudentNotFoundException()
+    {
+        int daysToReturn = 5, updatedDaysToReturn = 6; 
+        LocalDateTime orderTime = LocalDateTime.of(2025, 2, 23, 12, 9, 31);
+        LocalDateTime returnTime = orderTime.plusDays(daysToReturn); 
+
+        OrderRequest updateOrderRequest = OrderRequest.builder()
+            .bookId(1L)
+            .studentId(2L)
+            .daysToReturn(updatedDaysToReturn)
+            .build();
+
+        BookEntity foundOrderBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .build();
+
+        StudentEntity foundOrderStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        OrderEntity foundOrderEntity = OrderEntity.builder()
+            .id(1L)
+            .book(foundOrderBookEntity)
+            .student(foundOrderStudentEntity)
+            .orderTimestamp(orderTime)
+            .returnTimestamp(returnTime)
+            .build(); 
+
+        Mockito.when(orderRepository.findById(1L)).thenReturn(Optional.of(foundOrderEntity));
+        Mockito.when(bookService.getBookEntityById(1L)).thenReturn(foundOrderBookEntity);
+        Mockito.when(studentService.getStudentEntityById(2L))
+            .thenThrow(new StudentNotFoundException("Student not found with id : 2"));
+
+        Assertions
+            .assertThrows(
+                StudentNotFoundException.class,
+                () -> orderService.updateOrder(1L, updateOrderRequest)
+            );
+        
+        Mockito.verify(orderRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(orderMapper, Mockito.times(1)).convertRequestToEntity(updateOrderRequest, foundOrderEntity);
+        Mockito.verify(bookService, Mockito.times(1)).getBookEntityById(1L);
+        Mockito.verify(studentService, Mockito.times(1)).getStudentEntityById(2L);
+        Mockito.verifyNoMoreInteractions(bookService, studentService, orderMapper, orderRepository);
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateOrder() method when order, student exist but book doesn't")
+    public void givenUpdateOrderWhenOrderAndStudentExistsButBookDoesNotExistsThenThrowBookNotFoundException()
+    {
+        int daysToReturn = 5, updatedDaysToReturn = 6; 
+        LocalDateTime orderTime = LocalDateTime.of(2025, 2, 23, 12, 9, 31);
+        LocalDateTime returnTime = orderTime.plusDays(daysToReturn);
+
+        OrderRequest updateOrderRequest = OrderRequest.builder()
+            .bookId(2L)
+            .studentId(1L)
+            .daysToReturn(updatedDaysToReturn)
+            .build();
+
+        BookEntity foundOrderBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .build();
+
+        StudentEntity foundOrderStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        OrderEntity foundOrderEntity = OrderEntity.builder()
+            .id(1L)
+            .book(foundOrderBookEntity)
+            .student(foundOrderStudentEntity)
+            .orderTimestamp(orderTime)
+            .returnTimestamp(returnTime)
+            .build();
+
+        Mockito.when(orderRepository.findById(1L)).thenReturn(Optional.of(foundOrderEntity));
+        Mockito.when(bookService.getBookEntityById(2L))
+            .thenThrow(new BookNotFoundException("Book not found with id : 1"));
+
+        Assertions
+           .assertThrows(
+                BookNotFoundException.class,
+                () -> orderService.updateOrder(1L, updateOrderRequest)
+            );
+        
+        Mockito.verify(orderRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(orderMapper, Mockito.times(1)).convertRequestToEntity(updateOrderRequest, foundOrderEntity);
+        Mockito.verify(bookService, Mockito.times(1)).getBookEntityById(2L);
+        Mockito.verifyNoMoreInteractions(bookService, studentService, orderMapper, orderRepository);
+    }
+
+    @Test
+    @DisplayName(value = "Testing updateOrder() method when order doesn't exist")
+    public void givenUpdateOrderWhenOrderDoesNotExistThenThrowOrderNotFoundException()
+    {
+        OrderRequest updateOrderRequest = OrderRequest.builder()
+            .bookId(1L)
+            .studentId(1L)
+            .daysToReturn(6)
+            .build();
+
+        Mockito.when(orderRepository.findById(1L)).thenReturn(Optional.empty());
+
+        OrderNotFoundException exception = Assertions
+           .assertThrows(
+                OrderNotFoundException.class,
+                () -> orderService.updateOrder(1L, updateOrderRequest)
+            );
+
+        Assertions.assertEquals("Order not found with id : 1", exception.getMessage());
+        
+        Mockito.verify(orderRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(bookService, studentService, orderMapper, orderRepository);
+    }
 }

@@ -148,6 +148,8 @@ public class OrderService
            .orElseThrow(() -> new OrderNotFoundException("Order not found with id : " + orderId));
 
         orderMapper.convertRequestToEntity(orderRequest, orderEntity);
+        orderEntity.setBook(bookService.getBookEntityById(orderRequest.getBookId()));
+        orderEntity.setStudent(studentService.getStudentEntityById(orderRequest.getStudentId()));
 
         if (orderRequest.getDaysToReturn() > 0)
         {
