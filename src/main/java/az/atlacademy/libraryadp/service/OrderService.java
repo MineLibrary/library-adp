@@ -206,11 +206,11 @@ public class OrderService
         
         orderRepository.deleteById(orderId);
 
-        log.info("Deleted order with id: {}", orderId);
+        log.info("Returned book of order with id: {}", orderId);
 
         return BaseResponse.<Void>builder()
                 .success(true)
-                .message("Order deleted successfully.")
+                .message("Order book returned successfully.")
                 .status(HttpStatus.OK.value())
                 .build();
     }

@@ -937,4 +937,187 @@ public class OrderServiceTest
         Mockito.verify(orderRepository, Mockito.times(1)).findById(1L);
         Mockito.verifyNoMoreInteractions(bookService, studentService, orderMapper, orderRepository);
     }
+
+    @Test
+    @DisplayName(value = "Testing deleteOrder() method")
+    public void givenDeleteOrderThenReturnSuccessResponse()
+    {
+        BaseResponse<Void> serviceResponse = orderService.deleteOrder(1L);
+
+        Mockito.verify(orderRepository, Mockito.times(1)).deleteById(1L);
+        Mockito.verifyNoMoreInteractions(bookService, studentService, orderMapper, orderRepository);
+
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Order deleted successfully.", serviceResponse.getMessage());
+        Assertions.assertNull(serviceResponse.getData());
+    }
+
+    @Test
+    @DisplayName(value = "Testing returnOrderBook() method when order exists and time is before return time")
+    public void givenReturnOrderBookWhenOrderExistsAndTimeIsBeforeReturnTimeThenReturnSuccessResponse()
+    {
+        int daysToReturn = 5; 
+        LocalDateTime orderTime = LocalDateTime.of(2025, 2, 5, 8, 9, 10);
+        LocalDateTime returnTimeExpected = orderTime.plusDays(daysToReturn); 
+        LocalDateTime returnTime = orderTime.plusDays(daysToReturn - 1);
+        MockedStatic<LocalDateTime> mockedLocalDateTime = Mockito.mockStatic(LocalDateTime.class);
+
+        BookEntity foundOrderBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .build();
+
+        StudentEntity foundOrderStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        OrderEntity foundOrderEntity = OrderEntity.builder()
+            .id(1L)
+            .book(foundOrderBookEntity)
+            .student(foundOrderStudentEntity)
+            .orderTimestamp(orderTime)
+            .returnTimestamp(returnTimeExpected)
+            .build(); 
+
+        Mockito.when(orderRepository.findById(1L)).thenReturn(Optional.of(foundOrderEntity));
+        Mockito.when(bookService.updateBookStock(foundOrderBookEntity.getId(), foundOrderBookEntity.getStock() + 1))
+            .thenReturn(
+                BaseResponse.<Void>builder()
+                    .status(HttpStatus.OK.value())
+                    .success(true)
+                    .message("Book stock updated successfully.")
+                    .build()
+            );
+
+        mockedLocalDateTime.when(LocalDateTime::now).thenReturn(returnTime);
+
+        Mockito
+            .when(
+                studentService.updateStudentTrustRate(foundOrderStudentEntity.getId(), 
+                foundOrderStudentEntity.getTrustRate() + 10)
+            )
+            .thenReturn(
+                BaseResponse.<Void>builder()
+                    .success(true)
+                    .message("Trust rate updated successfully.")
+                    .status(HttpStatus.OK.value())
+                    .build()
+            );
+
+        BaseResponse<Void> serviceResponse = orderService.returnOrderBook(1L);
+
+        Mockito.verify(orderRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(bookService, Mockito.times(1)).updateBookStock(1L, 6);
+        Mockito.verify(studentService, Mockito.times(1)).updateStudentTrustRate(1L, 110);
+        Mockito.verify(orderRepository, Mockito.times(1)).deleteById(1L);
+        Mockito.verifyNoMoreInteractions(bookService, studentService, orderMapper, orderRepository);
+
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Order book returned successfully.", serviceResponse.getMessage());
+        Assertions.assertNull(serviceResponse.getData());
+
+        mockedLocalDateTime.close();
+    }
+
+    @Test
+    @DisplayName(value = "Testing returnOrderBook() method when order exists and time is after return time")
+    public void givenReturnOrderBookWhenOrderExistsAndTimeIsAfterReturnTimeThenReturnSuccessResponse()
+    {
+        int daysToReturn = 5; 
+        LocalDateTime orderTime = LocalDateTime.of(2025, 2, 5, 8, 9, 10);
+        LocalDateTime returnTimeExpected = orderTime.plusDays(daysToReturn); 
+        LocalDateTime returnTime = orderTime.plusDays(daysToReturn + 1);
+        MockedStatic<LocalDateTime> mockedLocalDateTime = Mockito.mockStatic(LocalDateTime.class);
+
+        BookEntity foundOrderBookEntity = BookEntity.builder()
+            .id(1L)
+            .title("Tiny Pretty Things")
+            .stock(5)
+            .build();
+
+        StudentEntity foundOrderStudentEntity = StudentEntity.builder()
+            .id(1L)
+            .trustRate(100)
+            .email("filankes@gmail.com")
+            .finCode("5SFJ13D")
+            .firstName("Filankes")
+            .lastName("Filankesov")
+            .phoneNumber("050 550 50 50")
+            .build();
+
+        OrderEntity foundOrderEntity = OrderEntity.builder()
+            .id(1L)
+            .book(foundOrderBookEntity)
+            .student(foundOrderStudentEntity)
+            .orderTimestamp(orderTime)
+            .returnTimestamp(returnTimeExpected)
+            .build(); 
+
+        Mockito.when(orderRepository.findById(1L)).thenReturn(Optional.of(foundOrderEntity));
+        Mockito.when(bookService.updateBookStock(foundOrderBookEntity.getId(), foundOrderBookEntity.getStock() + 1))
+            .thenReturn(
+                BaseResponse.<Void>builder()
+                    .status(HttpStatus.OK.value())
+                    .success(true)
+                    .message("Book stock updated successfully.")
+                    .build()
+            );
+
+        mockedLocalDateTime.when(LocalDateTime::now).thenReturn(returnTime);
+
+        Mockito
+            .when(
+                studentService.updateStudentTrustRate(foundOrderStudentEntity.getId(), 
+                foundOrderStudentEntity.getTrustRate() - 10)
+            )
+            .thenReturn(
+                BaseResponse.<Void>builder()
+                    .success(true)
+                    .message("Trust rate updated successfully.")
+                    .status(HttpStatus.OK.value())
+                    .build()
+            );
+
+        BaseResponse<Void> serviceResponse = orderService.returnOrderBook(1L);
+
+        Mockito.verify(orderRepository, Mockito.times(1)).findById(1L);
+        Mockito.verify(bookService, Mockito.times(1)).updateBookStock(1L, 6);
+        Mockito.verify(studentService, Mockito.times(1)).updateStudentTrustRate(1L, 90);
+        Mockito.verify(orderRepository, Mockito.times(1)).deleteById(1L);
+        Mockito.verifyNoMoreInteractions(bookService, studentService, orderMapper, orderRepository);
+
+        Assertions.assertEquals(HttpStatus.OK.value(), serviceResponse.getStatus());
+        Assertions.assertEquals(true, serviceResponse.isSuccess());
+        Assertions.assertEquals("Order book returned successfully.", serviceResponse.getMessage());
+        Assertions.assertNull(serviceResponse.getData());
+
+        mockedLocalDateTime.close();
+    }
+
+    @Test
+    @DisplayName(value = "Testing returnOrderBook() method when order does not exist")
+    public void givenReturnOrderBookWhenOrderDoesNotExistThenThrowOrderNotFoundException()
+    {
+        Mockito.when(orderRepository.findById(1L)).thenReturn(Optional.empty());
+
+        OrderNotFoundException exception = Assertions
+           .assertThrows(
+                OrderNotFoundException.class,
+                () -> orderService.returnOrderBook(1L)
+            );
+
+        Assertions.assertEquals("Order not found with id : 1", exception.getMessage());
+        
+        Mockito.verify(orderRepository, Mockito.times(1)).findById(1L);
+        Mockito.verifyNoMoreInteractions(bookService, studentService, orderMapper, orderRepository);
+    }
 }
